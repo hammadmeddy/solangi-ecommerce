@@ -19,6 +19,8 @@ export function productToDemo(p: Product & { category?: { name: string } }): Dem
     minQty: p.minQty ?? undefined,
     condition: p.condition ?? undefined,
     serviceArea: p.serviceArea ?? undefined,
+    imageUrl: p.imageUrl ?? undefined,
+    sellerOwned: Boolean(p.sellerId),
   };
 }
 

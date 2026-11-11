@@ -18,6 +18,8 @@ export function SellerListings() {
   const { listings, saveListing, removeListing, ready } = useSeller();
   const { format } = useCurrency();
   const [editing, setEditing] = useState<SellerListing | null>(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   if (!user || user.role !== "seller") {
     return (
@@ -41,17 +43,25 @@ export function SellerListings() {
     });
   }
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!editing || !editing.name.trim()) return;
     const cat = shopCategories.find((c) => c.id === editing.categoryId) ?? shopCategories[0];
-    saveListing({
-      ...editing,
-      name: editing.name.trim(),
-      category: cat.name,
-      description: editing.description.trim(),
-    });
-    setEditing(null);
+    setSaving(true);
+    setError("");
+    try {
+      await saveListing({
+        ...editing,
+        name: editing.name.trim(),
+        category: cat.name,
+        description: editing.description.trim(),
+      });
+      setEditing(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("saveFailed"));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -76,6 +86,10 @@ export function SellerListings() {
             </button>
           </div>
 
+          {error && !editing ? (
+            <p className="mb-4 text-sm font-medium text-[var(--sale)]">{error}</p>
+          ) : null}
+
           <ul className="mb-6 grid gap-3">
             {listings.map((item) => (
               <li key={item.id} className="rounded-xl border border-[var(--line)] bg-[var(--cream)]/60 p-4">
@@ -94,7 +108,12 @@ export function SellerListings() {
                     <button
                       type="button"
                       className="text-sm font-semibold text-[var(--sale)]"
-                      onClick={() => removeListing(item.id)}
+                      onClick={() => {
+                        setError("");
+                        void removeListing(item.id).catch((err) => {
+                          setError(err instanceof Error ? err.message : t("saveFailed"));
+                        });
+                      }}
                     >
                       {t("remove")}
                     </button>
@@ -171,8 +190,11 @@ export function SellerListings() {
                 />
               </label>
               <p className="text-xs text-[var(--muted)]">{t("priceNote")}</p>
+              {error ? <p className="text-sm font-medium text-[var(--sale)]">{error}</p> : null}
               <div className="flex max-w-sm gap-2">
-                <AuthButton type="submit">{t("saveListing")}</AuthButton>
+                <AuthButton type="submit" disabled={saving}>
+                  {t("saveListing")}
+                </AuthButton>
                 <AuthButton type="button" variant="ghost" onClick={() => setEditing(null)}>
                   {t("cancel")}
                 </AuthButton>

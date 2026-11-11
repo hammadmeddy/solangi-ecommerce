@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { AuthButton } from "@/components/auth/AuthField";
+import { apiPost } from "@/lib/api-client";
+import type { AuthUser } from "@/lib/auth";
 
 const NAV = [
   { href: "/seller" as const, key: "navDashboard" as const },
@@ -25,6 +27,8 @@ export function SellerShell({
   const t = useTranslations("Seller");
   const ta = useTranslations("Auth");
   const { user, ready, updateUser, signOut } = useAuth();
+  const [enabling, setEnabling] = useState(false);
+  const [enableError, setEnableError] = useState("");
   const router = useRouter();
   const pathname = usePathname();
 
@@ -52,10 +56,23 @@ export function SellerShell({
           <div className="grid max-w-sm gap-3">
             <AuthButton
               type="button"
-              onClick={() => updateUser({ role: "seller" })}
+              disabled={enabling}
+              onClick={() => {
+                setEnableError("");
+                setEnabling(true);
+                void apiPost<{ user: AuthUser }>("/api/seller/enable", {})
+                  .then((res) => updateUser(res.user))
+                  .catch((err) => {
+                    setEnableError(err instanceof Error ? err.message : t("saveFailed"));
+                  })
+                  .finally(() => setEnabling(false));
+              }}
             >
               {t("enableCta")}
             </AuthButton>
+            {enableError ? (
+              <p className="text-sm font-medium text-[var(--sale)]">{enableError}</p>
+            ) : null}
             <Link
               href="/account"
               className="inline-flex items-center justify-center rounded-full border border-[var(--line)] px-5 py-3 text-sm font-semibold hover:border-[var(--teal)]"

@@ -17,6 +17,9 @@ export type DemoProduct = {
   minQty?: number;
   condition?: string;
   serviceArea?: string;
+  imageUrl?: string;
+  /** True when a seller account owns the row. */
+  sellerOwned?: boolean;
 };
 
 export function productMode(product: DemoProduct): ModeId {

@@ -17,6 +17,8 @@ export function SellerStoreForm() {
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setName(store.name);
@@ -34,18 +36,27 @@ export function SellerStoreForm() {
     );
   }
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    saveStore({
-      name: name.trim(),
-      slug: slug.trim().toLowerCase().replace(/\s+/g, "-"),
-      city: city.trim(),
-      phone: phone.trim(),
-      bio: bio.trim(),
-      verified: store.verified,
-    });
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 2500);
+    setSaving(true);
+    setError("");
+    setSaved(false);
+    try {
+      await saveStore({
+        name: name.trim(),
+        slug: slug.trim().toLowerCase().replace(/\s+/g, "-"),
+        city: city.trim(),
+        phone: phone.trim(),
+        bio: bio.trim(),
+        verified: store.verified,
+      });
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("saveFailed"));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -70,9 +81,12 @@ export function SellerStoreForm() {
           <p className="text-xs text-[var(--muted)]">
             {store.verified ? t("verified") : t("unverified")} · {t("storeNote")}
           </p>
+          {error ? <p className="text-sm font-medium text-[var(--sale)]">{error}</p> : null}
           {saved ? <p className="text-sm font-medium text-[var(--teal)]">{t("saved")}</p> : null}
           <div className="max-w-xs">
-            <AuthButton type="submit">{t("saveStore")}</AuthButton>
+            <AuthButton type="submit" disabled={saving}>
+              {t("saveStore")}
+            </AuthButton>
           </div>
         </form>
       )}

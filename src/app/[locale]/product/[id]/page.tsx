@@ -7,7 +7,7 @@ export function generateStaticParams() {
   return [...CATALOG, ...MODE_CATALOG].map((p) => ({ id: p.id }));
 }
 
-/** Allow seller listing ids created at runtime (localStorage). */
+/** Allow seller listing ids created in the database after build. */
 export const dynamicParams = true;
 
 export default async function ProductPage({

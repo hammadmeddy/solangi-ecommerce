@@ -35,12 +35,16 @@ export async function POST(req: Request) {
       data: { consumed: true },
     });
 
+    const existingUser = await prisma.user.findUnique({ where: { phone } });
+    const keepExisting = challenge.purpose === "login" && existingUser;
     const user = await prisma.user.upsert({
       where: { phone },
-      update: {
-        name: challenge.name || undefined,
-        role: challenge.role,
-      },
+      update: keepExisting
+        ? {}
+        : {
+            name: challenge.name || undefined,
+            role: challenge.role,
+          },
       create: {
         phone,
         name: challenge.name || "Solangi Member",

@@ -11,6 +11,7 @@ export async function GET(req: Request) {
 
   const where: Prisma.ProductWhereInput = {
     status: "active",
+    stock: { gt: 0 },
   };
 
   if (mode && mode !== "all") {
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
     where,
     include: { category: true },
     orderBy: [{ mode: "asc" }, { name: "asc" }],
-    take: 200,
+    take: 500,
   });
 
   return jsonOk({ products: products.map(productToDemo) });

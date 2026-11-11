@@ -114,7 +114,57 @@ async function main() {
     create: { id: "solo", announcement: "" },
   });
 
-  console.log(`Seeded ${CATEGORIES.length} categories, ${all.length} products, admin + seller.`);
+  const demoListings = [
+    {
+      id: "listing-kurta",
+      name: "Linen blend kurta set",
+      categoryId: "fashion",
+      pricePkr: 4290,
+      stock: 18,
+      status: "active",
+      description: "Seller-managed retail listing (demo).",
+    },
+    {
+      id: "listing-dinner",
+      name: "Ceramic dinner set · 16 pcs",
+      categoryId: "home",
+      pricePkr: 7890,
+      stock: 6,
+      status: "active",
+      description: "Seller-managed retail listing (demo).",
+    },
+    {
+      id: "listing-draft",
+      name: "New seasonal scarf (draft)",
+      categoryId: "fashion",
+      pricePkr: 1290,
+      stock: 0,
+      status: "draft",
+      description: "Draft listing — not visible in shop yet.",
+    },
+  ];
+
+  for (const item of demoListings) {
+    const data = {
+      name: item.name,
+      categoryId: item.categoryId,
+      pricePkr: item.pricePkr,
+      description: item.description,
+      sellerName: "Solangi Demo Store",
+      stock: item.stock,
+      stockLabel: item.stock > 0 ? "In stock" : "Out of stock",
+      status: item.status,
+      mode: "retail",
+      sellerId: seller.id,
+    };
+    await prisma.product.upsert({
+      where: { id: item.id },
+      update: data,
+      create: { id: item.id, ...data },
+    });
+  }
+
+  console.log(`Seeded ${CATEGORIES.length} categories, ${all.length + demoListings.length} products, admin + seller.`);
 }
 
 main()
