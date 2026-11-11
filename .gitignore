@@ -34,6 +34,10 @@ yarn-error.log*
 .env*
 !.env.example
 
+# admin/seller uploads (paths are stored in the database)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
 # local sqlite
 /prisma/*.db
 /prisma/*.db-journal

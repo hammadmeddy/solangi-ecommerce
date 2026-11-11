@@ -25,10 +25,16 @@ Health check: `GET /api/health`
 | `POST /api/auth/verify-otp` | Verify + set session cookie |
 | `GET /api/auth/me` | Current user |
 | `POST /api/auth/logout` | Clear session |
-| `GET /api/products` | Catalog (`mode`, `category`, `q`) |
+| `GET /api/products` | Catalog (`mode`, `category`, `q`, `sellerOnly=1`) |
 | `GET /api/products/[id]` | Product detail |
 | `GET /api/categories` | Categories |
 | `GET/POST /api/orders` | List / place COD orders |
+| `POST /api/seller/enable` | Promote the signed-in customer to seller |
+| `GET/PUT /api/seller/store` | Seller store profile |
+| `GET/POST /api/seller/listings` | Seller's products |
+| `PATCH/DELETE /api/seller/listings/[id]` | Update or remove an owned listing |
+| `GET /api/media` | Public hero, category, and product image URLs |
+| `PATCH /api/admin/media` | Admin photo and announcement updates |
 
 ## Hostinger later
 1. Provision MySQL (or Postgres)

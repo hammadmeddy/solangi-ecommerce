@@ -15,12 +15,16 @@ export function AdminCatalog() {
 
   async function onPick(id: string, file: File | undefined) {
     if (!file || !file.type.startsWith("image/")) return;
-    if (file.size > 1_800_000) {
+    if (file.size > 1_500_000) {
       alert(t("fileTooLarge"));
       return;
     }
-    const dataUrl = await readFileAsDataUrl(file);
-    setProductImage(id, dataUrl);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      await setProductImage(id, dataUrl);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : t("saveFailed"));
+    }
   }
 
   return (
@@ -66,7 +70,11 @@ export function AdminCatalog() {
                   <button
                     type="button"
                     className="text-xs font-semibold text-[var(--sale)]"
-                    onClick={() => setProductImage(product.id, null)}
+                    onClick={() => {
+                      void setProductImage(product.id, null).catch((err) => {
+                        alert(err instanceof Error ? err.message : t("saveFailed"));
+                      });
+                    }}
                   >
                     {t("clear")}
                   </button>

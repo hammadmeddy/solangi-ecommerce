@@ -15,15 +15,19 @@ export function AdminMedia() {
 
   async function onPick(
     file: File | undefined,
-    apply: (dataUrl: string) => void,
+    apply: (dataUrl: string) => Promise<void>,
   ) {
     if (!file || !file.type.startsWith("image/")) return;
-    if (file.size > 1_800_000) {
+    if (file.size > 1_500_000) {
       alert(t("fileTooLarge"));
       return;
     }
-    const dataUrl = await readFileAsDataUrl(file);
-    apply(dataUrl);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      await apply(dataUrl);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : t("saveFailed"));
+    }
   }
 
   return (
@@ -67,7 +71,11 @@ export function AdminMedia() {
                     <button
                       type="button"
                       className="text-xs font-semibold text-[var(--sale)]"
-                      onClick={() => setHeroImage(i, null)}
+                      onClick={() => {
+                        void setHeroImage(i, null).catch((err) => {
+                          alert(err instanceof Error ? err.message : t("saveFailed"));
+                        });
+                      }}
                     >
                       {t("clear")}
                     </button>
@@ -125,7 +133,11 @@ export function AdminMedia() {
                       <button
                         type="button"
                         className="text-[0.68rem] font-semibold text-[var(--sale)]"
-                        onClick={() => setCategoryImage(cat.id, null)}
+                        onClick={() => {
+                          void setCategoryImage(cat.id, null).catch((err) => {
+                            alert(err instanceof Error ? err.message : t("saveFailed"));
+                          });
+                        }}
                       >
                         {t("clear")}
                       </button>

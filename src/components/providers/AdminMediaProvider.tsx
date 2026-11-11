@@ -13,106 +13,117 @@ import {
   emptyAdminMedia,
   type AdminMediaState,
 } from "@/lib/admin";
+import { apiGet, apiSend } from "@/lib/api-client";
 
 type AdminMediaContextValue = {
   ready: boolean;
   media: AdminMediaState;
-  setCategoryImage: (id: string, dataUrl: string | null) => void;
-  setProductImage: (id: string, dataUrl: string | null) => void;
-  setHeroImage: (index: number, dataUrl: string | null) => void;
-  setAnnouncement: (text: string) => void;
-  resetMedia: () => void;
+  setCategoryImage: (id: string, dataUrl: string | null) => Promise<void>;
+  setProductImage: (id: string, dataUrl: string | null) => Promise<void>;
+  setHeroImage: (index: number, dataUrl: string | null) => Promise<void>;
+  setAnnouncement: (text: string) => Promise<void>;
+  resetMedia: () => Promise<void>;
 };
 
 const AdminMediaContext = createContext<AdminMediaContextValue | null>(null);
+
+async function patchMedia(body: unknown) {
+  return apiSend<{ media: AdminMediaState }>("PATCH", "/api/admin/media", body);
+}
 
 export function AdminMediaProvider({ children }: { children: React.ReactNode }) {
   const [media, setMedia] = useState<AdminMediaState>(emptyAdminMedia);
   const [ready, setReady] = useState(false);
 
+  const reload = useCallback(async () => {
+    const res = await apiGet<{ media: AdminMediaState }>("/api/media");
+    setMedia(res.media);
+  }, []);
+
   useEffect(() => {
+    let cancelled = false;
     try {
-      const raw = localStorage.getItem(ADMIN_MEDIA_KEY);
-      if (raw) setMedia({ ...emptyAdminMedia(), ...JSON.parse(raw) });
+      localStorage.removeItem(ADMIN_MEDIA_KEY);
     } catch {
       /* ignore */
     }
-    setReady(true);
+    (async () => {
+      try {
+        const res = await apiGet<{ media: AdminMediaState }>("/api/media");
+        if (!cancelled) setMedia(res.media);
+      } catch {
+        /* shop still renders default art */
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const persist = useCallback((next: AdminMediaState) => {
-    setMedia(next);
-    try {
-      localStorage.setItem(ADMIN_MEDIA_KEY, JSON.stringify(next));
-    } catch {
-      /* ignore — large data URLs may hit quota */
-    }
-  }, []);
+  const runUpdate = useCallback(
+    async (optimistic: (prev: AdminMediaState) => AdminMediaState, body: unknown) => {
+      setMedia(optimistic);
+      try {
+        const res = await patchMedia(body);
+        setMedia(res.media);
+      } catch (err) {
+        await reload().catch(() => setMedia(emptyAdminMedia()));
+        throw err;
+      }
+    },
+    [reload],
+  );
 
   const setCategoryImage = useCallback(
-    (id: string, dataUrl: string | null) => {
-      setMedia((prev) => {
+    (id: string, dataUrl: string | null) =>
+      runUpdate((prev) => {
         const categoryImages = { ...prev.categoryImages };
         if (dataUrl) categoryImages[id] = dataUrl;
         else delete categoryImages[id];
-        const next = { ...prev, categoryImages };
-        try {
-          localStorage.setItem(ADMIN_MEDIA_KEY, JSON.stringify(next));
-        } catch {
-          /* ignore */
-        }
-        return next;
-      });
-    },
-    [],
+        return { ...prev, categoryImages };
+      }, { target: "category", id, dataUrl }),
+    [runUpdate],
   );
 
-  const setProductImage = useCallback((id: string, dataUrl: string | null) => {
-    setMedia((prev) => {
-      const productImages = { ...prev.productImages };
-      if (dataUrl) productImages[id] = dataUrl;
-      else delete productImages[id];
-      const next = { ...prev, productImages };
-      try {
-        localStorage.setItem(ADMIN_MEDIA_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, []);
+  const setProductImage = useCallback(
+    (id: string, dataUrl: string | null) =>
+      runUpdate((prev) => {
+        const productImages = { ...prev.productImages };
+        if (dataUrl) productImages[id] = dataUrl;
+        else delete productImages[id];
+        return { ...prev, productImages };
+      }, { target: "product", id, dataUrl }),
+    [runUpdate],
+  );
 
-  const setHeroImage = useCallback((index: number, dataUrl: string | null) => {
-    const key = String(index);
-    setMedia((prev) => {
-      const heroImages = { ...prev.heroImages };
-      if (dataUrl) heroImages[key] = dataUrl;
-      else delete heroImages[key];
-      const next = { ...prev, heroImages };
-      try {
-        localStorage.setItem(ADMIN_MEDIA_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, []);
+  const setHeroImage = useCallback(
+    (index: number, dataUrl: string | null) => {
+      const key = String(index);
+      return runUpdate((prev) => {
+        const heroImages = { ...prev.heroImages };
+        if (dataUrl) heroImages[key] = dataUrl;
+        else delete heroImages[key];
+        return { ...prev, heroImages };
+      }, { target: "hero", index, dataUrl });
+    },
+    [runUpdate],
+  );
 
-  const setAnnouncement = useCallback((text: string) => {
-    setMedia((prev) => {
-      const next = { ...prev, announcement: text };
-      try {
-        localStorage.setItem(ADMIN_MEDIA_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, []);
+  const setAnnouncement = useCallback(
+    (text: string) =>
+      runUpdate(
+        (prev) => ({ ...prev, announcement: text }),
+        { target: "announcement", announcement: text },
+      ),
+    [runUpdate],
+  );
 
-  const resetMedia = useCallback(() => {
-    persist(emptyAdminMedia());
-  }, [persist]);
+  const resetMedia = useCallback(
+    () => runUpdate(() => emptyAdminMedia(), { target: "reset" }),
+    [runUpdate],
+  );
 
   const value = useMemo(
     () => ({
@@ -124,15 +135,7 @@ export function AdminMediaProvider({ children }: { children: React.ReactNode }) 
       setAnnouncement,
       resetMedia,
     }),
-    [
-      ready,
-      media,
-      setCategoryImage,
-      setProductImage,
-      setHeroImage,
-      setAnnouncement,
-      resetMedia,
-    ],
+    [ready, media, setCategoryImage, setProductImage, setHeroImage, setAnnouncement, resetMedia],
   );
 
   return (

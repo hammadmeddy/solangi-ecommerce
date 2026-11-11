@@ -16,11 +16,15 @@ export function AdminSettings() {
     if (ready) setText(media.announcement);
   }, [ready, media.announcement]);
 
-  function onSave(e: FormEvent) {
+  async function onSave(e: FormEvent) {
     e.preventDefault();
-    setAnnouncement(text.trim());
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1800);
+    try {
+      await setAnnouncement(text.trim());
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1800);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : t("saveFailed"));
+    }
   }
 
   return (
@@ -62,8 +66,11 @@ export function AdminSettings() {
           type="button"
           onClick={() => {
             if (confirm(t("resetConfirm"))) {
-              resetMedia();
-              setText("");
+              void resetMedia()
+                .then(() => setText(""))
+                .catch((err) => {
+                  alert(err instanceof Error ? err.message : t("saveFailed"));
+                });
             }
           }}
           className="rounded-full border border-[var(--sale)] px-4 py-2 text-sm font-semibold text-[var(--sale)]"
