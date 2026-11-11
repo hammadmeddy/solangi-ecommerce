@@ -1,0 +1,130 @@
+// Solangi backend — SQLite for local; switch provider + DATABASE_URL for Hostinger MySQL/Postgres later.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String
+  email     String?
+  /// customer | seller | admin
+  role      String   @default("customer")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  otps      OtpChallenge[]
+  orders    Order[]
+  listings  Product[]      @relation("SellerProducts")
+  store     SellerStore?
+}
+
+model OtpChallenge {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  name      String?
+  role      String   @default("customer")
+  purpose   String   @default("login")
+  expiresAt DateTime
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([phone, consumed])
+}
+
+model Category {
+  id         String    @id
+  name       String
+  photoLabel String
+  hrefKind   String    @default("category")
+  sortOrder  Int       @default(0)
+  imageUrl   String?
+  products   Product[]
+}
+
+model Product {
+  id            String   @id
+  name          String
+  categoryId    String
+  category      Category @relation(fields: [categoryId], references: [id])
+  pricePkr      Int
+  oldPricePkr   Int?
+  discountLabel String?
+  rating        Int      @default(4)
+  description   String
+  sellerName    String
+  stockLabel    String   @default("In stock")
+  stock         Int      @default(20)
+  /// retail | wholesale | used | services
+  mode          String   @default("retail")
+  minQty        Int?
+  condition     String?
+  serviceArea   String?
+  imageUrl      String?
+  status        String   @default("active")
+  sellerId      String?
+  seller        User?    @relation("SellerProducts", fields: [sellerId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  orderItems    OrderItem[]
+
+  @@index([mode, categoryId])
+  @@index([status])
+}
+
+model SellerStore {
+  id       String  @id @default(cuid())
+  userId   String  @unique
+  user     User    @relation(fields: [userId], references: [id])
+  name     String
+  slug     String  @unique
+  city     String
+  phone    String
+  bio      String  @default("")
+  verified Boolean @default(false)
+}
+
+model Order {
+  id           String   @id @default(cuid())
+  publicId     String   @unique
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  /// placed | accepted | shipped | completed | cancelled
+  status       String   @default("placed")
+  totalPkr     Int
+  itemCount    Int
+  summary      String
+  payment      String   @default("COD")
+  addressLabel String
+  customerName String?
+  phone        String?
+  createdAt    DateTime @default(now())
+  items        OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+  name      String
+  qty       Int
+  pricePkr  Int
+}
+
+model SiteSetting {
+  id           String  @id @default("solo")
+  announcement String  @default("")
+  heroRetail   String?
+  heroFlash    String?
+  heroModes    String?
+}
