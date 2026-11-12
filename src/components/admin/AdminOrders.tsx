@@ -1,45 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { AdminShell } from "./AdminShell";
-import { PLACED_ORDERS_KEY, type PlacedOrder } from "@/lib/cart";
+import type { PlacedOrder } from "@/lib/cart";
+import { ORDER_STATUSES, type OrderStatusValue } from "@/lib/order-status";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { apiSend } from "@/lib/api-client";
 
 export function AdminOrders() {
   const t = useTranslations("Admin");
+  const tc = useTranslations("Customer");
   const { format } = useCurrency();
   const [orders, setOrders] = useState<PlacedOrder[]>([]);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/orders", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error("load failed");
+      const data = (await res.json()) as { orders: PlacedOrder[] };
+      setOrders(data.orders || []);
+      setError("");
+    } catch {
+      setError(t("ordersLoadFailed"));
+    }
+  }, [t]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/orders", { credentials: "include", cache: "no-store" });
-        if (res.ok) {
-          const data = (await res.json()) as { orders: PlacedOrder[] };
-          if (!cancelled && data.orders?.length) {
-            setOrders(data.orders);
-            return;
-          }
-        }
-      } catch {
-        /* fall through */
-      }
-      try {
-        const raw = localStorage.getItem(PLACED_ORDERS_KEY);
-        if (!cancelled && raw) setOrders(JSON.parse(raw) as PlacedOrder[]);
-      } catch {
-        /* ignore */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    void load();
+  }, [load]);
+
+  async function updateStatus(orderId: string, status: OrderStatusValue) {
+    setSavingId(orderId);
+    setError("");
+    try {
+      const data = await apiSend<{ order: PlacedOrder }>(
+        "PATCH",
+        `/api/orders/${encodeURIComponent(orderId)}`,
+        { status },
+      );
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, ...data.order } : o)),
+      );
+    } catch {
+      setError(t("ordersUpdateFailed"));
+    } finally {
+      setSavingId(null);
+    }
+  }
 
   return (
     <AdminShell title={t("ordersTitle")} subtitle={t("ordersSub")}>
+      {error ? <p className="mb-4 text-sm text-[var(--sale)]">{error}</p> : null}
       {orders.length === 0 ? (
         <p className="rounded-xl border border-[var(--line)] bg-[var(--mist)]/40 px-4 py-8 text-[var(--muted)]">
           {t("ordersEmpty")}
@@ -56,10 +73,32 @@ export function AdminOrders() {
                 <span className="text-sm font-bold">{format(order.totalPkr)}</span>
               </div>
               <p className="text-xs text-[var(--muted)]">
-                {order.placedAt} · {order.payment} · {order.itemCount} items · {order.status}
+                {order.placedAt} · {order.payment} · {order.itemCount} items
+                {order.customerName ? ` · ${order.customerName}` : ""}
+                {order.phone ? ` · ${order.phone}` : ""}
               </p>
               <p className="mt-2 text-sm">{order.summary}</p>
               <p className="mt-1 text-xs text-[var(--muted)]">{order.addressLabel}</p>
+              <label className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                <span className="font-medium">{t("orderStatus")}</span>
+                <select
+                  className="rounded-lg border border-[var(--line)] bg-white px-3 py-2"
+                  value={order.status}
+                  disabled={savingId === order.id}
+                  onChange={(e) =>
+                    void updateStatus(order.id, e.target.value as OrderStatusValue)
+                  }
+                >
+                  {ORDER_STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {tc(`status.${status}`)}
+                    </option>
+                  ))}
+                </select>
+                {savingId === order.id ? (
+                  <span className="text-xs text-[var(--muted)]">{t("saving")}</span>
+                ) : null}
+              </label>
             </article>
           ))}
         </div>

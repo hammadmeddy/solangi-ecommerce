@@ -91,6 +91,10 @@ export async function POST(req: Request) {
       include: { items: true },
     });
 
+    if (session?.sub) {
+      await prisma.cartItem.deleteMany({ where: { userId: session.sub } });
+    }
+
     return jsonOk({
       order: {
         id: order.publicId,

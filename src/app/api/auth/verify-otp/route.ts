@@ -37,23 +37,32 @@ export async function POST(req: Request) {
 
     const existingUser = await prisma.user.findUnique({ where: { phone } });
     const keepExisting = challenge.purpose === "login" && existingUser;
+    const email = challenge.email?.trim().toLowerCase() || undefined;
+
     const user = await prisma.user.upsert({
       where: { phone },
       update: keepExisting
-        ? {}
+        ? {
+            ...(email && !existingUser?.email ? { email } : {}),
+            ...(email && existingUser?.email !== email ? { email } : {}),
+          }
         : {
             name: challenge.name || undefined,
             role: challenge.role,
+            ...(email ? { email } : {}),
           },
       create: {
         phone,
         name: challenge.name || "Solangi Member",
         role: challenge.role,
+        email,
       },
     });
 
     if (user.role === "seller") {
-      const existingStore = await prisma.sellerStore.findUnique({ where: { userId: user.id } });
+      const existingStore = await prisma.sellerStore.findUnique({
+        where: { userId: user.id },
+      });
       if (!existingStore) {
         const slugBase = user.name
           .toLowerCase()

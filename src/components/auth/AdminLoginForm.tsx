@@ -14,7 +14,9 @@ export function AdminLoginForm() {
   const router = useRouter();
   const [name, setName] = useState("Solangi Admin");
   const [phone, setPhone] = useState("03000000000");
+  const [email, setEmail] = useState("yasirhammad21@gmail.com");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (ready && user?.role === "admin") router.replace("/admin");
@@ -27,9 +29,24 @@ export function AdminLoginForm() {
       setError(ta("errorPhone"));
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError(ta("errorEmail"));
+      return;
+    }
     setError("");
-    await startAdminLogin({ name, phone: cleaned });
-    router.push("/auth/verify");
+    setBusy(true);
+    try {
+      await startAdminLogin({
+        name,
+        phone: cleaned,
+        email: email.trim(),
+      });
+      router.push("/auth/verify");
+    } catch {
+      setError(ta("errorOtpSend"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -51,8 +68,19 @@ export function AdminLoginForm() {
           hint={t("loginHint")}
           required
         />
+        <AuthField
+          label={ta("email")}
+          name="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          hint={ta("emailOtpHint")}
+          required
+        />
         {error ? <p className="text-sm text-[var(--sale)]">{error}</p> : null}
-        <AuthButton type="submit">{t("loginCta")}</AuthButton>
+        <AuthButton type="submit" disabled={busy}>
+          {busy ? ta("loading") : t("loginCta")}
+        </AuthButton>
       </form>
       <p className="mt-4 text-sm text-[var(--muted)]">
         <Link href="/auth/login" className="font-semibold text-[var(--teal)]">

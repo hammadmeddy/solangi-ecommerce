@@ -73,7 +73,7 @@ async function main() {
       phone: "03000000000",
       name: "Solangi Admin",
       role: "admin",
-      email: "admin@solangiecommerce.com",
+      email: "yasirhammad21@gmail.com",
     },
   });
 
@@ -113,6 +113,56 @@ async function main() {
     update: {},
     create: { id: "solo", announcement: "" },
   });
+
+  const seedReviews = [
+    {
+      id: "rev-ayesha",
+      quote:
+        "Clean shopping experience. I found home goods quickly and checkout felt familiar.",
+      author: "Ayesha K.",
+      meta: "Karachi · Retail shopper",
+      sortOrder: 1,
+    },
+    {
+      id: "rev-usman",
+      quote:
+        "As a seller I want listings that update prices easily — this layout already makes that feel possible.",
+      author: "Usman R.",
+      meta: "Lahore · Prospective seller",
+      sortOrder: 2,
+    },
+    {
+      id: "rev-sara",
+      quote:
+        "Language and currency switches in the header are exactly what multi-city families need.",
+      author: "Sara M.",
+      meta: "Islamabad · Retail shopper",
+      sortOrder: 3,
+    },
+  ];
+
+  for (const rev of seedReviews) {
+    await prisma.review.upsert({
+      where: { id: rev.id },
+      update: {
+        quote: rev.quote,
+        author: rev.author,
+        meta: rev.meta,
+        status: "approved",
+        sortOrder: rev.sortOrder,
+      },
+      create: {
+        id: rev.id,
+        quote: rev.quote,
+        author: rev.author,
+        meta: rev.meta,
+        rating: 5,
+        status: "approved",
+        locale: "en",
+        sortOrder: rev.sortOrder,
+      },
+    });
+  }
 
   const demoListings = [
     {
@@ -164,7 +214,9 @@ async function main() {
     });
   }
 
-  console.log(`Seeded ${CATEGORIES.length} categories, ${all.length + demoListings.length} products, admin + seller.`);
+  console.log(
+    `Seeded ${CATEGORIES.length} categories, ${all.length + demoListings.length} products, ${seedReviews.length} reviews, admin + seller.`,
+  );
 }
 
 main()

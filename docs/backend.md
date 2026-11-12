@@ -4,7 +4,7 @@
 - **Next.js Route Handlers** under `/api/*`
 - **Prisma 5 + SQLite** (`prisma/dev.db`) for local development
 - **JWT httpOnly cookie** session (`solangi_session`)
-- Demo OTP **`123456`** until SMS is connected
+- **Email OTP** via SMTP (`SMTP_USER` / `SMTP_PASS`). Local fallback returns a demo hint if SMTP is empty.
 
 ## Setup
 
@@ -29,6 +29,10 @@ Health check: `GET /api/health`
 | `GET /api/products/[id]` | Product detail |
 | `GET /api/categories` | Categories |
 | `GET/POST /api/orders` | List / place COD orders |
+| `PATCH /api/orders/[id]` | Admin order status update |
+| `GET/PUT/DELETE /api/cart` | Signed-in cart sync |
+| `GET/POST /api/reviews` | Public reviews / submit |
+| `PATCH/DELETE /api/admin/reviews/[id]` | Moderate reviews |
 | `POST /api/seller/enable` | Promote the signed-in customer to seller |
 | `GET/PUT /api/seller/store` | Seller store profile |
 | `GET/POST /api/seller/listings` | Seller's products |
@@ -41,4 +45,4 @@ Health check: `GET /api/health`
 2. Change `prisma/schema.prisma` `provider` + `DATABASE_URL`
 3. Set `SOLANGI_AUTH_SECRET` to a long random value
 4. `npx prisma db push && npm run db:seed`
-5. Wire real SMS in `request-otp` (stop returning/using fixed `123456` in production)
+5. Set `SMTP_USER` / `SMTP_PASS` (Gmail app password) so OTP emails send in production

@@ -12,7 +12,9 @@ export function LoginForm() {
   const { startLogin, user, ready } = useAuth();
   const router = useRouter();
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (ready && user) router.replace("/account");
@@ -25,9 +27,20 @@ export function LoginForm() {
       setError(t("errorPhone"));
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError(t("errorEmail"));
+      return;
+    }
     setError("");
-    await startLogin(cleaned);
-    router.push("/auth/verify");
+    setBusy(true);
+    try {
+      await startLogin({ phone: cleaned, email: email.trim() });
+      router.push("/auth/verify");
+    } catch {
+      setError(t("errorOtpSend"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -46,15 +59,20 @@ export function LoginForm() {
           required
         />
         <AuthField
-          label={t("password")}
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="••••••••"
-          hint={t("passwordHint")}
+          label={t("email")}
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          hint={t("emailOtpHint")}
+          required
         />
         {error ? <p className="text-sm text-[var(--sale)]">{error}</p> : null}
-        <AuthButton type="submit">{t("continueOtp")}</AuthButton>
+        <AuthButton type="submit" disabled={busy}>
+          {busy ? t("loading") : t("continueOtp")}
+        </AuthButton>
       </form>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm">
         <Link href="/auth/forgot" className="font-medium text-[var(--teal)] hover:underline">

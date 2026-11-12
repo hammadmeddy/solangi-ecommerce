@@ -12,18 +12,31 @@ export function ForgotForm() {
   const { startLogin } = useAuth();
   const router = useRouter();
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const cleaned = phone.replace(/\s/g, "");
     if (cleaned.length < 10) {
       setError(t("errorPhone"));
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError(t("errorEmail"));
+      return;
+    }
     setError("");
-    startLogin(cleaned);
-    router.push("/auth/verify");
+    setBusy(true);
+    try {
+      await startLogin({ phone: cleaned, email: email.trim() });
+      router.push("/auth/verify");
+    } catch {
+      setError(t("errorOtpSend"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -40,8 +53,20 @@ export function ForgotForm() {
           hint={t("forgotHint")}
           required
         />
+        <AuthField
+          label={t("email")}
+          name="email"
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          hint={t("emailOtpHint")}
+          required
+        />
         {error ? <p className="text-sm text-[var(--sale)]">{error}</p> : null}
-        <AuthButton type="submit">{t("sendResetOtp")}</AuthButton>
+        <AuthButton type="submit" disabled={busy}>
+          {busy ? t("loading") : t("sendResetOtp")}
+        </AuthButton>
       </form>
       <p className="mt-4 text-sm">
         <Link href="/auth/login" className="font-semibold text-[var(--teal)] hover:underline">

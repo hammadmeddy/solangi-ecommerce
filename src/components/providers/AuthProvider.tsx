@@ -14,9 +14,12 @@ import { apiGet, apiPost } from "@/lib/api-client";
 
 type PendingVerify = {
   phone: string;
+  email: string;
   name: string;
   role: AuthRole;
   mode: "login" | "register" | "admin";
+  emailMasked?: string;
+  demoHint?: string;
 };
 
 type AuthContextValue = {
@@ -24,13 +27,18 @@ type AuthContextValue = {
   pending: PendingVerify | null;
   ready: boolean;
   backend: boolean;
-  startLogin: (phone: string) => Promise<void>;
+  startLogin: (input: { phone: string; email: string }) => Promise<void>;
   startRegister: (input: {
     name: string;
     phone: string;
+    email: string;
     role: AuthRole;
   }) => Promise<void>;
-  startAdminLogin: (input: { name: string; phone: string }) => Promise<void>;
+  startAdminLogin: (input: {
+    name: string;
+    phone: string;
+    email: string;
+  }) => Promise<void>;
   completeVerify: (otp: string) => Promise<{ ok: boolean; error?: string }>;
   updateUser: (patch: Partial<AuthUser>) => void;
   signOut: () => Promise<void>;
@@ -85,29 +93,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const requestOtp = useCallback(
-    async (input: PendingVerify) => {
-      setPending(input);
-      try {
-        await apiPost("/api/auth/request-otp", {
-          phone: input.phone,
-          name: input.name,
-          role: input.role,
-          purpose: input.mode,
-        });
-        setBackend(true);
-      } catch {
-        setBackend(false);
-        // Offline / API down — keep pending; verify will fall back to local demo
-      }
-    },
-    [],
-  );
+  const requestOtp = useCallback(async (input: PendingVerify) => {
+    setPending(input);
+    try {
+      const res = await apiPost<{
+        emailMasked?: string;
+        hint?: string;
+        delivery?: string;
+      }>("/api/auth/request-otp", {
+        phone: input.phone,
+        email: input.email,
+        name: input.name,
+        role: input.role,
+        purpose: input.mode,
+      });
+      setBackend(true);
+      setPending({
+        ...input,
+        emailMasked: res.emailMasked,
+        demoHint: res.hint,
+      });
+    } catch (err) {
+      setBackend(false);
+      throw err;
+    }
+  }, []);
 
   const startLogin = useCallback(
-    async (phone: string) => {
+    async (input: { phone: string; email: string }) => {
       await requestOtp({
-        phone: phone.trim(),
+        phone: input.phone.trim(),
+        email: input.email.trim().toLowerCase(),
         name: "Solangi Member",
         role: "customer",
         mode: "login",
@@ -117,9 +133,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const startRegister = useCallback(
-    async (input: { name: string; phone: string; role: AuthRole }) => {
+    async (input: {
+      name: string;
+      phone: string;
+      email: string;
+      role: AuthRole;
+    }) => {
       await requestOtp({
         phone: input.phone.trim(),
+        email: input.email.trim().toLowerCase(),
         name: input.name.trim() || "Solangi Member",
         role: input.role === "admin" ? "customer" : input.role,
         mode: "register",
@@ -129,9 +151,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const startAdminLogin = useCallback(
-    async (input: { name: string; phone: string }) => {
+    async (input: { name: string; phone: string; email: string }) => {
       await requestOtp({
         phone: input.phone.trim(),
+        email: input.email.trim().toLowerCase(),
         name: input.name.trim() || "Solangi Admin",
         role: "admin",
         mode: "admin",
@@ -156,15 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setBackend(true);
         return { ok: true };
       } catch {
-        // Local demo fallback when API is unavailable
-        if (!/^\d{6}$/.test(code)) return { ok: false, error: "format" };
-        persistLocal({
-          name: pending.name,
-          phone: pending.phone,
-          role: pending.role,
-        });
-        setPending(null);
-        return { ok: true };
+        return { ok: false, error: "invalid" };
       }
     },
     [pending, persistLocal],

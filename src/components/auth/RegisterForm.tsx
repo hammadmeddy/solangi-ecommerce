@@ -21,8 +21,10 @@ export function RegisterForm() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [role, setRole] = useState<AuthRole>(initialRole);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setRole(initialRole);
@@ -43,9 +45,25 @@ export function RegisterForm() {
       setError(t("errorPhone"));
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError(t("errorEmail"));
+      return;
+    }
     setError("");
-    await startRegister({ name, phone: cleaned, role });
-    router.push("/auth/verify");
+    setBusy(true);
+    try {
+      await startRegister({
+        name,
+        phone: cleaned,
+        email: email.trim(),
+        role,
+      });
+      router.push("/auth/verify");
+    } catch {
+      setError(t("errorOtpSend"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -99,14 +117,20 @@ export function RegisterForm() {
           required
         />
         <AuthField
-          label={t("emailOptional")}
+          label={t("email")}
           name="email"
           type="email"
           autoComplete="email"
           placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          hint={t("emailOtpHint")}
+          required
         />
         {error ? <p className="text-sm text-[var(--sale)]">{error}</p> : null}
-        <AuthButton type="submit">{t("continueOtp")}</AuthButton>
+        <AuthButton type="submit" disabled={busy}>
+          {busy ? t("loading") : t("continueOtp")}
+        </AuthButton>
       </form>
       <p className="mt-4 text-sm text-[var(--muted)]">
         {t("haveAccount")}{" "}

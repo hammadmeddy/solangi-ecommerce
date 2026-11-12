@@ -7,15 +7,19 @@ export type CartLine = {
   qty: number;
 };
 
+import type { OrderStatusValue } from "@/lib/order-status";
+
 export type PlacedOrder = {
   id: string;
   placedAt: string;
-  status: "placed";
+  status: OrderStatusValue | string;
   totalPkr: number;
   itemCount: number;
   summary: string;
-  payment: "COD";
+  payment: "COD" | string;
   addressLabel: string;
+  customerName?: string | null;
+  phone?: string | null;
 };
 
 export const CART_STORAGE_KEY = "solangi-cart";

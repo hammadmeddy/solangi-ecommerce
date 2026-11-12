@@ -18,13 +18,14 @@ npm run dev
 # GET http://127.0.0.1:3000/api/health
 ```
 
-Demo OTP: **123456** (stored in DB; SMS later).
+OTP is emailed (Gmail SMTP). If SMTP is not configured locally, the API returns a demo hint code.
 
 ## Built so far
 
 - Homepage, modes (retail/wholesale/used/services), search + filters
-- Auth (API session + OTP) · customer · seller · admin media
-- Cart + COD checkout (orders persist to DB when API is up)
+- Auth (API session + **email OTP**) · customer · seller · admin media
+- Server-synced cart (when signed in) + COD checkout
+- Admin order status updates · DB-backed reviews
 - Catalog served from `/api/products` with local fallback
 
 Design theme locked. **Malik pushes GitHub** — agents develop only.
@@ -40,7 +41,7 @@ npm run build
 npm run start    # production (Hostinger Web Apps)
 ```
 
-`next.config.ts` sets `output: "standalone"` for Node hosting.
+`next.config.mjs` sets `output: "standalone"`. On Hostinger use `next build --webpack` (Next 16.3+ / old glibc).
 
 ## Locales & currency
 
@@ -49,4 +50,4 @@ npm run start    # production (Hostinger Web Apps)
 
 ## Still later
 
-- Real SMS OTP · Hostinger MySQL · JazzCash/EasyPaisa/Card · Affiliate/MLM/Investor engines
+- Hostinger MySQL · JazzCash/EasyPaisa/Card · Affiliate/MLM/Investor engines

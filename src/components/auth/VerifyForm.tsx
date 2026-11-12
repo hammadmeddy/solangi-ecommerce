@@ -14,6 +14,7 @@ export function VerifyForm() {
   const router = useRouter();
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!pending) {
@@ -36,7 +37,9 @@ export function VerifyForm() {
     e.preventDefault();
     if (!pending) return;
     const role = pending.role;
+    setBusy(true);
     const result = await completeVerify(otp);
+    setBusy(false);
     if (!result.ok) {
       setError(t("errorOtp"));
       return;
@@ -45,11 +48,18 @@ export function VerifyForm() {
     router.push(homeForRole(role));
   }
 
+  const destination = pending.emailMasked || pending.email || pending.phone;
+
   return (
     <AuthShell title={t("verifyTitle")} subtitle={t("verifySide")}>
       <p className="mb-4 text-sm text-[var(--muted)]">
-        {t("verifySent", { phone: pending.phone })}
+        {t("verifySentEmail", { email: destination })}
       </p>
+      {pending.demoHint ? (
+        <p className="mb-4 rounded-lg border border-[var(--line)] bg-[var(--mist)]/50 px-3 py-2 text-xs text-[var(--muted)]">
+          {t("otpDemoHint", { code: pending.demoHint })}
+        </p>
+      ) : null}
       <form className="grid gap-4" onSubmit={onSubmit}>
         <AuthField
           label={t("otp")}
@@ -63,7 +73,9 @@ export function VerifyForm() {
           required
         />
         {error ? <p className="text-sm text-[var(--sale)]">{error}</p> : null}
-        <AuthButton type="submit">{t("verifyCta")}</AuthButton>
+        <AuthButton type="submit" disabled={busy}>
+          {busy ? t("loading") : t("verifyCta")}
+        </AuthButton>
         <AuthButton
           type="button"
           variant="ghost"

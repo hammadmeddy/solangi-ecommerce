@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/media" as const, key: "navMedia" as const },
   { href: "/admin/catalog" as const, key: "navCatalog" as const },
   { href: "/admin/orders" as const, key: "navOrders" as const },
+  { href: "/admin/reviews" as const, key: "navReviews" as const },
   { href: "/admin/settings" as const, key: "navSettings" as const },
 ];
 
