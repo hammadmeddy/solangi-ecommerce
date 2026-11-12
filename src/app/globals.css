@@ -107,3 +107,199 @@ body {
   width: 0;
   height: 0;
 }
+
+/* Custom dropdown (replaces native <select> popups) */
+@layer components {
+  .ui-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .ui-dropdown__label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .ui-dropdown__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition:
+      border-color 0.18s ease,
+      background-color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .ui-dropdown__trigger:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .ui-dropdown__trigger:focus-visible {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(31, 107, 92, 0.16);
+  }
+
+  .ui-dropdown__value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ui-dropdown__chevron {
+    width: 0.7rem;
+    height: 0.45rem;
+    flex-shrink: 0;
+    color: var(--muted);
+    transition: transform 0.18s ease, color 0.18s ease;
+  }
+
+  .ui-dropdown__chevron.is-open {
+    transform: rotate(180deg);
+    color: var(--teal);
+  }
+
+  .ui-dropdown--header .ui-dropdown__trigger {
+    border-radius: 999px;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8125rem;
+  }
+
+  .ui-dropdown--header .ui-dropdown__trigger:hover,
+  .ui-dropdown--header.is-open .ui-dropdown__trigger {
+    border-color: var(--line);
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  .ui-dropdown--header .ui-dropdown__menu,
+  .ui-dropdown--compact .ui-dropdown__menu {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+  }
+
+  .ui-dropdown--compact .ui-dropdown__trigger {
+    border-radius: 999px;
+    border-color: var(--line);
+    background: white;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8125rem;
+  }
+
+  .ui-dropdown--compact .ui-dropdown__trigger:hover,
+  .ui-dropdown--compact.is-open .ui-dropdown__trigger {
+    border-color: rgba(31, 107, 92, 0.35);
+    background: var(--cream);
+  }
+
+  .ui-dropdown--field {
+    display: grid;
+    gap: 0.35rem;
+    width: 100%;
+  }
+
+  .ui-dropdown--field .ui-dropdown__trigger {
+    width: 100%;
+    justify-content: space-between;
+    border-radius: 0.85rem;
+    border-color: var(--line);
+    background: white;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .ui-dropdown--field .ui-dropdown__trigger:hover,
+  .ui-dropdown--field.is-open .ui-dropdown__trigger {
+    border-color: rgba(31, 107, 92, 0.4);
+    background: var(--cream);
+  }
+
+  .ui-dropdown__menu {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    inset-inline-start: 0;
+    z-index: 60;
+    min-width: max(100%, 8.5rem);
+    margin: 0;
+    padding: 0.35rem;
+    list-style: none;
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 244, 238, 0.98));
+    box-shadow:
+      0 18px 40px rgba(12, 36, 33, 0.12),
+      0 2px 8px rgba(12, 36, 33, 0.06);
+    backdrop-filter: blur(10px);
+    animation: ui-dropdown-rise 0.16s ease both;
+  }
+
+  .ui-dropdown--field .ui-dropdown__menu {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .ui-dropdown__option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-radius: 0.65rem;
+    padding: 0.55rem 0.7rem;
+    color: var(--ink);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.12s ease, color 0.12s ease;
+  }
+
+  .ui-dropdown__option.is-active {
+    background: var(--mist);
+  }
+
+  .ui-dropdown__option.is-selected {
+    background: var(--teal-soft);
+    color: var(--teal);
+    font-weight: 600;
+  }
+
+  .ui-dropdown__option.is-selected.is-active {
+    background: color-mix(in srgb, var(--teal-soft) 70%, var(--mist));
+  }
+
+  .ui-dropdown__check {
+    width: 0.9rem;
+    height: 0.9rem;
+    flex-shrink: 0;
+    color: var(--teal);
+  }
+}
+
+@keyframes ui-dropdown-rise {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

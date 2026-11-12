@@ -21,6 +21,16 @@ export async function POST(req: Request) {
     const challenge = await prisma.otpChallenge.findFirst({
       where: { phone, consumed: false },
       orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        phone: true,
+        email: true,
+        code: true,
+        name: true,
+        role: true,
+        purpose: true,
+        expiresAt: true,
+      },
     });
 
     if (!challenge || challenge.code !== code) {

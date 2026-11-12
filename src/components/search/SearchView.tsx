@@ -8,6 +8,7 @@ import { MODE_CATALOG } from "@/lib/modes-catalog";
 import { filterProducts, parseSearchFilters, type SearchFilters } from "@/lib/search";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { usePublicCatalog } from "@/components/catalog/usePublicCatalog";
+import { UiDropdown } from "@/components/ui/UiDropdown";
 
 export function SearchView({
   initial,
@@ -120,45 +121,42 @@ export function SearchView({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-            {t("mode")}
-            <select
-              value={mode}
-              onChange={(e) => {
-                const next = e.target.value as SearchFilters["mode"];
-                setMode(next);
-                pushQuery({ ...filters, mode: next });
-              }}
-              className="rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm font-medium normal-case tracking-normal text-[var(--ink)]"
-            >
-              <option value="all">{t("allModes")}</option>
-              {MODES.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label} · {m.sub}
-                </option>
-              ))}
-            </select>
-          </label>
+          <UiDropdown
+            variant="field"
+            ariaLabel={t("mode")}
+            label={t("mode")}
+            value={mode}
+            options={[
+              { value: "all", label: t("allModes") },
+              ...MODES.map((m) => ({
+                value: m.id,
+                label: `${m.label} · ${m.sub}`,
+              })),
+            ]}
+            onChange={(next) => {
+              const value = next as SearchFilters["mode"];
+              setMode(value);
+              pushQuery({ ...filters, mode: value });
+            }}
+          />
 
-          <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-            {t("category")}
-            <select
-              value={categoryId}
-              onChange={(e) => {
-                const next = e.target.value;
-                setCategoryId(next);
-                pushQuery({ ...filters, categoryId: next });
-              }}
-              className="rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm font-medium normal-case tracking-normal text-[var(--ink)]"
-            >
-              <option value="all">{t("allCategories")}</option>
-              {CATEGORIES.filter((c) => c.id !== "services").map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <UiDropdown
+            variant="field"
+            ariaLabel={t("category")}
+            label={t("category")}
+            value={categoryId}
+            options={[
+              { value: "all", label: t("allCategories") },
+              ...CATEGORIES.filter((c) => c.id !== "services").map((c) => ({
+                value: c.id,
+                label: c.name,
+              })),
+            ]}
+            onChange={(next) => {
+              setCategoryId(next);
+              pushQuery({ ...filters, categoryId: next });
+            }}
+          />
 
           <label className="grid gap-1 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
             {t("minPrice")}
@@ -186,24 +184,22 @@ export function SearchView({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <label className="inline-flex items-center gap-2 text-sm text-[var(--ink-soft)]">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-              {t("sort")}
-            </span>
-            <select
-              value={sort}
-              onChange={(e) => {
-                const next = e.target.value as SearchFilters["sort"];
-                setSort(next);
-                pushQuery({ ...filters, sort: next });
-              }}
-              className="rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-sm"
-            >
-              <option value="relevance">{t("sortRelevance")}</option>
-              <option value="price-asc">{t("sortPriceAsc")}</option>
-              <option value="price-desc">{t("sortPriceDesc")}</option>
-            </select>
-          </label>
+          <UiDropdown
+            variant="compact"
+            ariaLabel={t("sort")}
+            label={t("sort")}
+            value={sort}
+            options={[
+              { value: "relevance", label: t("sortRelevance") },
+              { value: "price-asc", label: t("sortPriceAsc") },
+              { value: "price-desc", label: t("sortPriceDesc") },
+            ]}
+            onChange={(next) => {
+              const value = next as SearchFilters["sort"];
+              setSort(value);
+              pushQuery({ ...filters, sort: value });
+            }}
+          />
           <button
             type="button"
             onClick={clearFilters}

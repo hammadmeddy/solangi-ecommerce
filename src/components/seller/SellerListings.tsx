@@ -8,6 +8,7 @@ import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { CATEGORIES } from "@/lib/categories";
 import type { SellerListing } from "@/lib/seller";
 import { AuthButton, AuthField } from "@/components/auth/AuthField";
+import { UiDropdown } from "@/components/ui/UiDropdown";
 import { SellerShell } from "./SellerShell";
 
 const shopCategories = CATEGORIES.filter((c) => c.href !== "services-mode");
@@ -132,20 +133,17 @@ export function SellerListings() {
                 onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                 required
               />
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium">{t("category")}</span>
-                <select
-                  className="rounded-xl border border-[var(--line)] bg-[var(--cream)] px-3.5 py-3 outline-none"
-                  value={editing.categoryId}
-                  onChange={(e) => setEditing({ ...editing, categoryId: e.target.value })}
-                >
-                  {shopCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <UiDropdown
+                variant="field"
+                ariaLabel={t("category")}
+                label={t("category")}
+                value={editing.categoryId}
+                options={shopCategories.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                }))}
+                onChange={(next) => setEditing({ ...editing, categoryId: next })}
+              />
               <div className="grid gap-3 sm:grid-cols-2">
                 <AuthField
                   label={t("pricePkr")}
@@ -163,23 +161,23 @@ export function SellerListings() {
                   onChange={(e) => setEditing({ ...editing, stock: Number(e.target.value) || 0 })}
                 />
               </div>
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium">{t("status")}</span>
-                <select
-                  className="rounded-xl border border-[var(--line)] bg-[var(--cream)] px-3.5 py-3 outline-none"
-                  value={editing.status}
-                  onChange={(e) =>
-                    setEditing({
-                      ...editing,
-                      status: e.target.value as SellerListing["status"],
-                    })
-                  }
-                >
-                  <option value="active">{t("listingStatus.active")}</option>
-                  <option value="draft">{t("listingStatus.draft")}</option>
-                  <option value="out">{t("listingStatus.out")}</option>
-                </select>
-              </label>
+              <UiDropdown
+                variant="field"
+                ariaLabel={t("status")}
+                label={t("status")}
+                value={editing.status}
+                options={[
+                  { value: "active", label: t("listingStatus.active") },
+                  { value: "draft", label: t("listingStatus.draft") },
+                  { value: "out", label: t("listingStatus.out") },
+                ]}
+                onChange={(next) =>
+                  setEditing({
+                    ...editing,
+                    status: next as SellerListing["status"],
+                  })
+                }
+              />
               <label className="grid gap-1.5 text-sm">
                 <span className="font-medium">{t("description")}</span>
                 <textarea

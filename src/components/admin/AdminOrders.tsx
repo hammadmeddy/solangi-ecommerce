@@ -6,6 +6,7 @@ import { AdminShell } from "./AdminShell";
 import type { PlacedOrder } from "@/lib/cart";
 import { ORDER_STATUSES, type OrderStatusValue } from "@/lib/order-status";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { UiDropdown } from "@/components/ui/UiDropdown";
 import { apiSend } from "@/lib/api-client";
 
 export function AdminOrders() {
@@ -79,26 +80,25 @@ export function AdminOrders() {
               </p>
               <p className="mt-2 text-sm">{order.summary}</p>
               <p className="mt-1 text-xs text-[var(--muted)]">{order.addressLabel}</p>
-              <label className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-medium">{t("orderStatus")}</span>
-                <select
-                  className="rounded-lg border border-[var(--line)] bg-white px-3 py-2"
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                <UiDropdown
+                  variant="compact"
+                  ariaLabel={t("orderStatus")}
+                  label={t("orderStatus")}
                   value={order.status}
                   disabled={savingId === order.id}
-                  onChange={(e) =>
-                    void updateStatus(order.id, e.target.value as OrderStatusValue)
+                  options={ORDER_STATUSES.map((status) => ({
+                    value: status,
+                    label: tc(`status.${status}`),
+                  }))}
+                  onChange={(next) =>
+                    void updateStatus(order.id, next as OrderStatusValue)
                   }
-                >
-                  {ORDER_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {tc(`status.${status}`)}
-                    </option>
-                  ))}
-                </select>
+                />
                 {savingId === order.id ? (
                   <span className="text-xs text-[var(--muted)]">{t("saving")}</span>
                 ) : null}
-              </label>
+              </div>
             </article>
           ))}
         </div>
