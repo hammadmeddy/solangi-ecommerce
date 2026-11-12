@@ -114,6 +114,7 @@ export function ModeCategories() {
               <Link
                 key={cat.id}
                 href={href}
+                prefetch
                 className="w-[104px] shrink-0 snap-start text-center transition-transform hover:-translate-y-0.5"
               >
                 <CategoryMedia

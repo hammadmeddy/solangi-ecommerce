@@ -7,16 +7,8 @@ import { usePublicCatalog } from "@/components/catalog/usePublicCatalog";
 
 export function ProductView({ id }: { id: string }) {
   const t = useTranslations("Catalog");
-  const { ready, getById } = usePublicCatalog();
+  const { getById } = usePublicCatalog();
   const product = getById(id);
-
-  if (!ready) {
-    return (
-      <section className="wrap py-16">
-        <p className="text-[var(--muted)]">{t("loadingCatalog")}</p>
-      </section>
-    );
-  }
 
   if (!product) {
     return (

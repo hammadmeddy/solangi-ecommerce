@@ -45,6 +45,10 @@ export async function generateMetadata({
     title: t("title"),
     description: t("description"),
     metadataBase: new URL("https://solangiecommerce.com"),
+    icons: {
+      icon: [{ url: "/logo/solangi-mark.png", type: "image/png" }],
+      apple: [{ url: "/logo/solangi-mark.png" }],
+    },
   };
 }
 

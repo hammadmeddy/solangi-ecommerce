@@ -8,21 +8,40 @@ import { apiGet } from "@/lib/api-client";
 
 const STATIC_CATALOG: DemoProduct[] = [...CATALOG, ...MODE_CATALOG];
 
-export function usePublicCatalog() {
-  const [apiProducts, setApiProducts] = useState<DemoProduct[] | null>(null);
-  const [apiReady, setApiReady] = useState(false);
+/** Session-level cache so category clicks do not wait on a fresh full catalog fetch. */
+let catalogCache: DemoProduct[] | null = null;
+let catalogPromise: Promise<DemoProduct[] | null> | null = null;
+
+function loadCatalog(): Promise<DemoProduct[] | null> {
+  if (catalogCache) return Promise.resolve(catalogCache);
+  if (!catalogPromise) {
+    catalogPromise = apiGet<{ products: DemoProduct[] }>("/api/products")
+      .then((res) => {
+        catalogCache = res.products ?? null;
+        return catalogCache;
+      })
+      .catch(() => {
+        catalogPromise = null;
+        return null;
+      });
+  }
+  return catalogPromise;
+}
+
+export function usePublicCatalog(initialProducts?: DemoProduct[]) {
+  const [apiProducts, setApiProducts] = useState<DemoProduct[] | null>(
+    () => initialProducts ?? catalogCache,
+  );
 
   useEffect(() => {
     let cancelled = false;
+    if (catalogCache) {
+      setApiProducts(catalogCache);
+      return;
+    }
     (async () => {
-      try {
-        const res = await apiGet<{ products: DemoProduct[] }>("/api/products");
-        if (!cancelled) setApiProducts(res.products);
-      } catch {
-        if (!cancelled) setApiProducts(null);
-      } finally {
-        if (!cancelled) setApiReady(true);
-      }
+      const products = await loadCatalog();
+      if (!cancelled && products) setApiProducts(products);
     })();
     return () => {
       cancelled = true;
@@ -30,8 +49,8 @@ export function usePublicCatalog() {
   }, []);
 
   const catalog = useMemo(
-    () => (apiProducts ? apiProducts : STATIC_CATALOG),
-    [apiProducts],
+    () => apiProducts ?? initialProducts ?? STATIC_CATALOG,
+    [apiProducts, initialProducts],
   );
 
   const sellerOnly = useMemo(
@@ -45,17 +64,20 @@ export function usePublicCatalog() {
   );
 
   const byCategory = useCallback(
-    (categoryId: string) => catalog.filter((product) => product.categoryId === categoryId),
+    (categoryId: string) =>
+      catalog.filter((product) => product.categoryId === categoryId),
     [catalog],
   );
 
   const byMode = useCallback(
-    (mode: ModeId) => catalog.filter((product) => (product.mode ?? "retail") === mode),
+    (mode: ModeId) =>
+      catalog.filter((product) => (product.mode ?? "retail") === mode),
     [catalog],
   );
 
   return {
-    ready: apiReady,
+    /** Static/seed catalog is always available — never block the UI on API. */
+    ready: true,
     catalog,
     sellerOnly,
     getById,

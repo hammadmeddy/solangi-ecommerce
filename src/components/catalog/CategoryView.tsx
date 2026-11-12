@@ -6,13 +6,23 @@ import { ProductCard } from "@/components/catalog/ProductCard";
 import { usePublicCatalog } from "@/components/catalog/usePublicCatalog";
 import { CategoryMedia } from "@/components/media/CategoryIcon";
 import type { Category } from "@/lib/categories";
+import type { DemoProduct } from "@/lib/products";
 
-export function CategoryView({ category }: { category: Category }) {
+export function CategoryView({
+  category,
+  initialProducts,
+}: {
+  category: Category;
+  initialProducts?: DemoProduct[];
+}) {
   const t = useTranslations("Catalog");
-  const { ready, byCategory, sellerOnly } = usePublicCatalog();
-  const products = byCategory(category.id);
+  const { byCategory, sellerOnly } = usePublicCatalog(initialProducts);
+  const products =
+    initialProducts && initialProducts.length > 0
+      ? initialProducts
+      : byCategory(category.id);
   const sellerIds = new Set(sellerOnly.map((p) => p.id));
-  const sellerCount = products.filter((p) => sellerIds.has(p.id)).length;
+  const sellerCount = products.filter((p) => sellerIds.has(p.id) || p.sellerOwned).length;
 
   return (
     <section className="wrap py-10 md:py-14">
@@ -33,7 +43,7 @@ export function CategoryView({ category }: { category: Category }) {
             {category.name}
           </h1>
           <p className="mt-2 max-w-[48ch] text-[var(--muted)]">{t("categorySub")}</p>
-          {ready && sellerCount > 0 ? (
+          {sellerCount > 0 ? (
             <p className="mt-2 text-sm font-medium text-[var(--teal)]">
               {t("includesSeller", { count: sellerCount })}
             </p>
@@ -47,9 +57,7 @@ export function CategoryView({ category }: { category: Category }) {
         />
       </div>
 
-      {!ready ? (
-        <p className="text-[var(--muted)]">{t("loadingCatalog")}</p>
-      ) : products.length === 0 ? (
+      {products.length === 0 ? (
         <p className="rounded-xl border border-[var(--line)] bg-white/60 px-5 py-8 text-[var(--muted)]">
           {t("emptyCategory")}
         </p>

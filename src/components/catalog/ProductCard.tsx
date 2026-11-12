@@ -30,6 +30,7 @@ export function ProductCard({ product }: { product: DemoProduct }) {
         <CategoryMedia
           categoryId={product.categoryId}
           productId={product.id}
+          src={product.imageUrl}
           label={product.name}
           size="md"
           className="h-full w-full"

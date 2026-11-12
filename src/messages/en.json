@@ -136,7 +136,7 @@
   "Catalog": {
     "home": "Home",
     "retailMode": "Retail · B2C",
-    "categorySub": "Browse seed retail listings in this category. Photos are Solangi placeholders until assets arrive.",
+    "categorySub": "Browse retail listings in this category. Admin can replace stock photos anytime.",
     "emptyCategory": "No retail listings in this category yet.",
     "seller": "Seller",
     "availability": "Availability",
@@ -465,7 +465,7 @@
     "settingsTitle": "Settings",
     "settingsSub": "Brand mark and storefront announcement.",
     "logoSection": "Smart logo",
-    "logoNote": "Solangi seal with gold trust spark — used in header, footer, and auth.",
+    "logoNote": "Teal & gold Solangi mark — used in header, footer, auth, and browser tab.",
     "announceLabel": "Announcement bar text",
     "announcePh": "Leave blank to use the default marketing strip",
     "save": "Save announcement",

@@ -51,13 +51,11 @@ export function ProductDetail({ product }: { product: DemoProduct }) {
           <CategoryMedia
             categoryId={product.categoryId}
             productId={product.id}
+            src={product.imageUrl}
             label={product.name}
             size="lg"
             className="h-full min-h-[360px] w-full"
           />
-          <p className="absolute bottom-3 left-3 right-3 rounded-lg bg-white/80 px-3 py-2 text-center text-[0.7rem] text-[var(--muted)] backdrop-blur-sm">
-            {t("tempIconNote")}
-          </p>
         </div>
 
         <div>

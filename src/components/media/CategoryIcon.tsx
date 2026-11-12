@@ -23,6 +23,7 @@ import {
   Watch,
 } from "lucide-react";
 import { useAdminMedia } from "@/components/providers/AdminMediaProvider";
+import { categoryPhoto } from "@/lib/category-images";
 
 const ICONS: Record<string, LucideIcon> = {
   computers: Laptop,
@@ -77,6 +78,8 @@ export function getCategoryAccent(categoryId: string): string {
 type MediaProps = {
   categoryId: string;
   productId?: string;
+  /** Explicit product/category image URL from API or seed. */
+  src?: string;
   label?: string;
   size?: "sm" | "md" | "lg";
   className?: string;
@@ -84,10 +87,39 @@ type MediaProps = {
   ignoreAdmin?: boolean;
 };
 
-/** Icon fallback, or admin-uploaded photo when available. */
+function Photo({
+  src,
+  label,
+  className,
+}: {
+  src: string;
+  label?: string;
+  className: string;
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden bg-[var(--mist)] ${className}`}
+      role={label ? "img" : undefined}
+      aria-label={label}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={label ?? ""}
+        loading="lazy"
+        decoding="async"
+        className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+    </div>
+  );
+}
+
+/** Photo when available (admin / product / curated), otherwise icon art. */
 export function CategoryMedia({
   categoryId,
   productId,
+  src,
   label,
   size = "md",
   className = "",
@@ -96,19 +128,14 @@ export function CategoryMedia({
   const { media } = useAdminMedia();
   const adminSrc = ignoreAdmin
     ? undefined
-    : (productId && media.productImages[productId]) || media.categoryImages[categoryId];
+    : (productId && media.productImages[productId]) ||
+      media.categoryImages[categoryId];
 
-  if (adminSrc) {
-    return (
-      <div
-        className={`relative overflow-hidden ${className}`}
-        role={label ? "img" : undefined}
-        aria-label={label}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={adminSrc} alt={label ?? ""} className="h-full w-full object-cover" />
-      </div>
-    );
+  const photo =
+    adminSrc || src || categoryPhoto(categoryId) || undefined;
+
+  if (photo) {
+    return <Photo src={photo} label={label} className={className} />;
   }
 
   const Icon = getCategoryIcon(categoryId);

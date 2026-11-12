@@ -7,7 +7,7 @@ type Props = {
   showTagline?: boolean;
 };
 
-/** Solangi brand mark — gold trust spark on a teal seal. */
+/** Solangi brand mark — teal & gold “S” with cart. */
 export function SolangiLogo({
   variant = "full",
   size = 44,
@@ -23,11 +23,11 @@ export function SolangiLogo({
     <span className={`inline-flex items-center gap-3 min-w-0 ${className}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/logo/solangi-mark.svg"
-        alt=""
+        src="/logo/solangi-mark.png"
+        alt="Solangi Ecommerce"
         width={size}
         height={size}
-        className="shrink-0 drop-shadow-[0_6px_14px_rgba(12,36,33,0.18)]"
+        className="shrink-0 object-contain drop-shadow-[0_6px_14px_rgba(12,36,33,0.18)]"
       />
       {variant === "full" ? (
         <span className="flex min-w-0 flex-col leading-tight">
@@ -36,7 +36,7 @@ export function SolangiLogo({
             <span className={`ms-1.5 text-[0.72em] font-semibold ${gold}`}>Ecommerce</span>
           </span>
           {showTagline ? (
-            <span className={`hidden sm:block text-[0.625rem] uppercase tracking-[0.14em] ${muted} mt-0.5`}>
+            <span className={`mt-0.5 hidden text-[0.625rem] uppercase tracking-[0.14em] sm:block ${muted}`}>
               Your trust is our wealth
             </span>
           ) : null}

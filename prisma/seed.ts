@@ -2,11 +2,13 @@ import { PrismaClient } from "@prisma/client";
 import { CATEGORIES } from "../src/lib/categories";
 import { CATALOG } from "../src/lib/products";
 import { MODE_CATALOG } from "../src/lib/modes-catalog";
+import { CATEGORY_PHOTOS } from "../src/lib/category-images";
 
 const prisma = new PrismaClient();
 
 async function main() {
   for (const [index, cat] of CATEGORIES.entries()) {
+    const imageUrl = CATEGORY_PHOTOS[cat.id] ?? null;
     await prisma.category.upsert({
       where: { id: cat.id },
       update: {
@@ -14,6 +16,7 @@ async function main() {
         photoLabel: cat.photoLabel,
         hrefKind: cat.href === "services-mode" ? "services-mode" : "category",
         sortOrder: index,
+        ...(imageUrl ? { imageUrl } : {}),
       },
       create: {
         id: cat.id,
@@ -21,12 +24,14 @@ async function main() {
         photoLabel: cat.photoLabel,
         hrefKind: cat.href === "services-mode" ? "services-mode" : "category",
         sortOrder: index,
+        imageUrl,
       },
     });
   }
 
   const all = [...CATALOG, ...MODE_CATALOG];
   for (const p of all) {
+    const imageUrl = p.imageUrl || CATEGORY_PHOTOS[p.categoryId] || null;
     await prisma.product.upsert({
       where: { id: p.id },
       update: {
@@ -44,6 +49,7 @@ async function main() {
         condition: p.condition ?? null,
         serviceArea: p.serviceArea ?? null,
         status: "active",
+        ...(imageUrl ? { imageUrl } : {}),
       },
       create: {
         id: p.id,
@@ -62,6 +68,7 @@ async function main() {
         serviceArea: p.serviceArea ?? null,
         status: "active",
         stock: p.minQty && p.minQty > 1 ? p.minQty * 20 : 25,
+        imageUrl,
       },
     });
   }
