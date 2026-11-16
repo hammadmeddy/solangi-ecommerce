@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { CustomerDashboard } from "./CustomerDashboard";
 
 /** Signed-out gate, or customer dashboard when authenticated. */
@@ -12,9 +13,7 @@ export function AccountGateOrDashboard() {
 
   if (!ready) {
     return (
-      <section className="wrap py-16">
-        <p className="text-[var(--muted)]">{t("loading")}</p>
-      </section>
+      <PremiumLoader label={t("loading")} />
     );
   }
 

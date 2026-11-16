@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { useCart } from "@/components/providers/CartProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { AuthButton } from "@/components/auth/AuthField";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 
 export function CartView() {
   const t = useTranslations("Cart");
@@ -13,9 +14,7 @@ export function CartView() {
 
   if (!ready) {
     return (
-      <section className="wrap py-16">
-        <p className="text-[var(--muted)]">{t("loading")}</p>
-      </section>
+      <PremiumLoader label={t("loading")} />
     );
   }
 

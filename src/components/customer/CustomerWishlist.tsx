@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useCustomer } from "@/components/providers/CustomerProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { CustomerShell } from "./CustomerShell";
 
 export function CustomerWishlist() {
@@ -18,7 +19,7 @@ export function CustomerWishlist() {
   return (
     <CustomerShell title={t("wishlistTitle")} subtitle={t("wishlistSub")}>
       {!ready ? (
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       ) : wishlist.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--line)] px-5 py-10 text-center">
           <p className="mb-3 text-[var(--muted)]">{t("wishlistEmpty")}</p>

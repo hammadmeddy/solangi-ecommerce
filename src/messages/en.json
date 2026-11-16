@@ -145,6 +145,7 @@
     "moreInCategory": "More in category",
     "cartNote": "Signed-in carts sync to your account. Guests keep a local cart until login. Checkout supports COD first.",
     "added": "Added to cart",
+    "addedDetail": "It’s saved in your cart.",
     "buyNow": "Buy now",
     "includesSeller": "{count} live seller listing(s) in this category",
     "loadingCatalog": "Loading catalog…",
@@ -207,6 +208,9 @@
     "errorName": "Enter your name.",
     "errorOtp": "Enter a valid 6-digit code.",
     "loading": "Loading account…",
+    "otpSent": "Code sent",
+    "otpSentDetail": "Check your email for the one-time code.",
+    "signedIn": "You’re signed in",
     "accountGateTitle": "Your Solangi account",
     "accountGateBody": "Sign in or create an account to open your portal. Customer and seller paths start here.",
     "portalEyebrow": "Account portal",
@@ -538,5 +542,9 @@
     "resultCount": "{count} results",
     "forQuery": "for “{q}”",
     "empty": "No matches. Try another word or clear filters."
+  },
+  "Ui": {
+    "dismiss": "Dismiss",
+    "notifications": "Notifications"
   }
 }

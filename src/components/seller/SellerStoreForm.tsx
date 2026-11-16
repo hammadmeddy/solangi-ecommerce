@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useSeller } from "@/components/providers/SellerProvider";
 import { AuthButton, AuthField } from "@/components/auth/AuthField";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { SellerShell } from "./SellerShell";
 
 export function SellerStoreForm() {
@@ -31,7 +32,7 @@ export function SellerStoreForm() {
   if (!user || user.role !== "seller") {
     return (
       <SellerShell title={t("storeTitle")} subtitle={t("storeSub")}>
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       </SellerShell>
     );
   }
@@ -62,7 +63,7 @@ export function SellerStoreForm() {
   return (
     <SellerShell title={t("storeTitle")} subtitle={t("storeSub")}>
       {!ready ? (
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       ) : (
         <form className="grid max-w-xl gap-4" onSubmit={onSubmit}>
           <AuthField label={t("storeName")} value={name} onChange={(e) => setName(e.target.value)} required />

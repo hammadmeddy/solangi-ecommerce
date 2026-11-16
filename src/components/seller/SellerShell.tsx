@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { AuthButton } from "@/components/auth/AuthField";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { apiPost } from "@/lib/api-client";
 import type { AuthUser } from "@/lib/auth";
 
@@ -38,9 +39,7 @@ export function SellerShell({
 
   if (!ready || !user) {
     return (
-      <section className="wrap py-16">
-        <p className="text-[var(--muted)]">{ta("loading")}</p>
-      </section>
+      <PremiumLoader label={ta("loading")} />
     );
   }
 

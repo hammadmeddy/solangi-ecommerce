@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useCustomer } from "@/components/providers/CustomerProvider";
 import { AuthButton, AuthField } from "@/components/auth/AuthField";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { CustomerShell } from "./CustomerShell";
 
 export function CustomerProfile() {
@@ -38,7 +39,7 @@ export function CustomerProfile() {
   return (
     <CustomerShell title={t("profileTitle")} subtitle={t("profileSub")}>
       {!ready ? (
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       ) : (
         <form className="grid max-w-xl gap-4" onSubmit={onSubmit}>
           <AuthField label={t("fullName")} name="name" value={name} onChange={(e) => setName(e.target.value)} required />

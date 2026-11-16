@@ -9,6 +9,7 @@ import { filterProducts, parseSearchFilters, type SearchFilters } from "@/lib/se
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { usePublicCatalog } from "@/components/catalog/usePublicCatalog";
 import { UiDropdown } from "@/components/ui/UiDropdown";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 
 export function SearchView({
   initial,
@@ -223,7 +224,9 @@ export function SearchView({
         ) : null}
       </div>
 
-      {!ready ? null : results.length === 0 ? (
+      {!ready ? (
+        <PremiumLoader variant="panel" label={t("loading")} />
+      ) : results.length === 0 ? (
         <p className="rounded-xl border border-[var(--line)] bg-white/60 px-5 py-10 text-center text-[var(--muted)]">
           {t("empty")}
         </p>

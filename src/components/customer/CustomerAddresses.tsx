@@ -6,6 +6,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useCustomer } from "@/components/providers/CustomerProvider";
 import type { CustomerAddress } from "@/lib/customer";
 import { AuthButton, AuthField } from "@/components/auth/AuthField";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { CustomerShell } from "./CustomerShell";
 
 export function CustomerAddresses() {
@@ -41,7 +42,7 @@ export function CustomerAddresses() {
   return (
     <CustomerShell title={t("addressesTitle")} subtitle={t("addressesSub")}>
       {!ready ? (
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       ) : (
         <>
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

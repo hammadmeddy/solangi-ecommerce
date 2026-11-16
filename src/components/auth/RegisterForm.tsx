@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { AUTH_ROLES, type AuthRole } from "@/lib/auth";
+import { useToast } from "@/components/ui/Toaster";
 import { AuthShell } from "./AuthShell";
 import { AuthButton, AuthField } from "./AuthField";
 
@@ -23,8 +24,14 @@ export function RegisterForm() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<AuthRole>(initialRole);
+  const toast = useToast();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  function fail(message: string) {
+    setError(message);
+    toast.error(message);
+  }
 
   useEffect(() => {
     setRole(initialRole);
@@ -38,15 +45,15 @@ export function RegisterForm() {
     e.preventDefault();
     const cleaned = phone.replace(/\s/g, "");
     if (!name.trim()) {
-      setError(t("errorName"));
+      fail(t("errorName"));
       return;
     }
     if (cleaned.length < 10) {
-      setError(t("errorPhone"));
+      fail(t("errorPhone"));
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError(t("errorEmail"));
+      fail(t("errorEmail"));
       return;
     }
     setError("");
@@ -58,9 +65,10 @@ export function RegisterForm() {
         email: email.trim(),
         role,
       });
+      toast.success(t("otpSent"), t("otpSentDetail"));
       router.push("/auth/verify");
     } catch {
-      setError(t("errorOtpSend"));
+      fail(t("errorOtpSend"));
     } finally {
       setBusy(false);
     }
@@ -128,7 +136,7 @@ export function RegisterForm() {
           required
         />
         {error ? <p className="text-sm text-[var(--sale)]">{error}</p> : null}
-        <AuthButton type="submit" disabled={busy}>
+        <AuthButton type="submit" busy={busy}>
           {busy ? t("loading") : t("continueOtp")}
         </AuthButton>
       </form>

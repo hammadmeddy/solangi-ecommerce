@@ -29,10 +29,12 @@ export function AuthField({
 export function AuthButton({
   children,
   variant = "primary",
+  busy = false,
   ...props
 }: {
   children: ReactNode;
   variant?: "primary" | "ghost";
+  busy?: boolean;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const styles =
     variant === "primary"
@@ -41,8 +43,12 @@ export function AuthButton({
   return (
     <button
       {...props}
-      className={`inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-50 ${styles} ${props.className ?? ""}`}
+      disabled={props.disabled || busy}
+      className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition disabled:opacity-60 ${styles} ${props.className ?? ""}`}
     >
+      {busy ? (
+        <span className={variant === "primary" ? "premium-spinner" : "premium-spinner premium-spinner--ink"} aria-hidden="true" />
+      ) : null}
       {children}
     </button>
   );

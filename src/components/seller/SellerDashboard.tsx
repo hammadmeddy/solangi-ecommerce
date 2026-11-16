@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useSeller } from "@/components/providers/SellerProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { SellerShell } from "./SellerShell";
 
 export function SellerDashboard() {
@@ -16,7 +17,7 @@ export function SellerDashboard() {
   if (!user || user.role !== "seller") {
     return (
       <SellerShell title={t("dashTitle")} subtitle={t("dashSub")}>
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       </SellerShell>
     );
   }
@@ -27,7 +28,7 @@ export function SellerDashboard() {
   return (
     <SellerShell title={t("dashTitle")} subtitle={t("dashSub", { store: store.name })}>
       {!ready ? (
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       ) : (
         <>
           <div className="mb-8 grid gap-3 sm:grid-cols-3">

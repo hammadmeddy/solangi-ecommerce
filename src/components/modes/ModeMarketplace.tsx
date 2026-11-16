@@ -14,6 +14,7 @@ import { CATEGORIES, type ModeId } from "@/lib/categories";
 import { modeLabel } from "@/lib/modes-catalog";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { usePublicCatalog } from "@/components/catalog/usePublicCatalog";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 
 const ICONS: Record<ModeId, LucideIcon> = {
   retail: ShoppingBag,
@@ -114,7 +115,7 @@ export function ModeMarketplace({
       </div>
 
       {!ready ? (
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       ) : products.length === 0 ? (
         <p className="rounded-xl border border-[var(--line)] bg-white/60 px-5 py-8 text-[var(--muted)]">
           {t("empty")}

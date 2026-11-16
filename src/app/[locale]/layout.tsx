@@ -13,6 +13,7 @@ import { AdminMediaProvider } from "@/components/providers/AdminMediaProvider";
 import { AnnouncementBar } from "@/components/chrome/AnnouncementBar";
 import { Header } from "@/components/chrome/Header";
 import { Footer } from "@/components/chrome/Footer";
+import { ToastProvider } from "@/components/ui/Toaster";
 import "../globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -70,6 +71,7 @@ export default async function LocaleLayout({
     <html lang={locale} dir={dir} className={`${cormorant.variable} ${outfit.variable}`}>
       <body className="antialiased">
         <NextIntlClientProvider messages={messages}>
+          <ToastProvider>
           <AuthProvider>
             <AdminMediaProvider>
               <CustomerProvider>
@@ -86,6 +88,7 @@ export default async function LocaleLayout({
               </CustomerProvider>
             </AdminMediaProvider>
           </AuthProvider>
+          </ToastProvider>
         </NextIntlClientProvider>
       </body>
     </html>

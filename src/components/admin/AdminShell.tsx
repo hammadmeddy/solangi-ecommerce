@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { SolangiLogo } from "@/components/brand/SolangiLogo";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 
 const NAV = [
   { href: "/admin" as const, key: "navDashboard" as const },
@@ -40,9 +41,7 @@ export function AdminShell({
 
   if (!ready || !user || user.role !== "admin") {
     return (
-      <section className="wrap py-16">
-        <p className="text-[var(--muted)]">{t("loading")}</p>
-      </section>
+      <PremiumLoader label={t("loading")} />
     );
   }
 

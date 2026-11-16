@@ -6,6 +6,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { useCart } from "@/components/providers/CartProvider";
 import { CategoryMedia } from "@/components/media/CategoryIcon";
+import { useToast } from "@/components/ui/Toaster";
 import { modeLabel } from "@/lib/modes-catalog";
 import { productMode, type DemoProduct } from "@/lib/products";
 
@@ -13,6 +14,7 @@ export function ProductDetail({ product }: { product: DemoProduct }) {
   const t = useTranslations("Catalog");
   const { format } = useCurrency();
   const { addProduct } = useCart();
+  const toast = useToast();
   const router = useRouter();
   const [added, setAdded] = useState(false);
   const stars = "★".repeat(product.rating) + "☆".repeat(5 - product.rating);
@@ -24,6 +26,7 @@ export function ProductDetail({ product }: { product: DemoProduct }) {
   function onAdd() {
     addProduct(product, qty);
     setAdded(true);
+    toast.success(t("added"), t("addedDetail"));
     window.setTimeout(() => setAdded(false), 2000);
   }
 
@@ -127,6 +130,7 @@ export function ProductDetail({ product }: { product: DemoProduct }) {
               type="button"
               onClick={() => {
                 addProduct(product, qty);
+                toast.success(t("added"), t("addedDetail"));
                 router.push("/checkout");
               }}
               className="inline-flex rounded-full border border-[var(--line)] px-5 py-3 text-sm font-semibold hover:border-[var(--teal)] hover:text-[var(--teal)]"

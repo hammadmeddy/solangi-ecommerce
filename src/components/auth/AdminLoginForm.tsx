@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useToast } from "@/components/ui/Toaster";
 import { AuthShell } from "./AuthShell";
 import { AuthButton, AuthField } from "./AuthField";
 
@@ -15,8 +16,14 @@ export function AdminLoginForm() {
   const [name, setName] = useState("Solangi Admin");
   const [phone, setPhone] = useState("03000000000");
   const [email, setEmail] = useState("yasirhammad21@gmail.com");
+  const toast = useToast();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  function fail(message: string) {
+    setError(message);
+    toast.error(message);
+  }
 
   useEffect(() => {
     if (ready && user?.role === "admin") router.replace("/admin");
@@ -26,11 +33,11 @@ export function AdminLoginForm() {
     e.preventDefault();
     const cleaned = phone.replace(/\s/g, "");
     if (cleaned.length < 10) {
-      setError(ta("errorPhone"));
+      fail(ta("errorPhone"));
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError(ta("errorEmail"));
+      fail(ta("errorEmail"));
       return;
     }
     setError("");
@@ -41,9 +48,10 @@ export function AdminLoginForm() {
         phone: cleaned,
         email: email.trim(),
       });
+      toast.success(ta("otpSent"), ta("otpSentDetail"));
       router.push("/auth/verify");
     } catch {
-      setError(ta("errorOtpSend"));
+      fail(ta("errorOtpSend"));
     } finally {
       setBusy(false);
     }
@@ -78,7 +86,7 @@ export function AdminLoginForm() {
           required
         />
         {error ? <p className="text-sm text-[var(--sale)]">{error}</p> : null}
-        <AuthButton type="submit" disabled={busy}>
+        <AuthButton type="submit" busy={busy}>
           {busy ? ta("loading") : t("loginCta")}
         </AuthButton>
       </form>

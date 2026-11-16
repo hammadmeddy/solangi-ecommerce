@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 
 const NAV = [
   { href: "/account" as const, key: "navDashboard" as const },
@@ -34,9 +35,7 @@ export function CustomerShell({
 
   if (!ready || !user) {
     return (
-      <section className="wrap py-16">
-        <p className="text-[var(--muted)]">{ta("loading")}</p>
-      </section>
+      <PremiumLoader label={ta("loading")} />
     );
   }
 

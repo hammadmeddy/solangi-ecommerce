@@ -8,6 +8,8 @@ import { useCart } from "@/components/providers/CartProvider";
 import { useCustomer } from "@/components/providers/CustomerProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { AuthButton } from "@/components/auth/AuthField";
+import { useToast } from "@/components/ui/Toaster";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 
 export function CheckoutView() {
   const t = useTranslations("Cart");
@@ -15,6 +17,7 @@ export function CheckoutView() {
   const { ready, lines, subtotalPkr, placeOrder } = useCart();
   const { addresses, ready: customerReady } = useCustomer();
   const { format } = useCurrency();
+  const toast = useToast();
   const router = useRouter();
   const [addressId, setAddressId] = useState("");
   const [error, setError] = useState("");
@@ -40,16 +43,16 @@ export function CheckoutView() {
 
   if (!authReady || !ready || !user) {
     return (
-      <section className="wrap py-16">
-        <p className="text-[var(--muted)]">{t("loading")}</p>
-      </section>
+      <PremiumLoader label={t("loading")} />
     );
   }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!selected) {
-      setError(t("needAddress"));
+      const message = t("needAddress");
+      setError(message);
+      toast.error(message);
       return;
     }
     const summary = lines.map((l) => `${l.name} × ${l.qty}`).join(" · ");

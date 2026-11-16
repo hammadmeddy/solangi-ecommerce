@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useCustomer } from "@/components/providers/CustomerProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { CustomerShell } from "./CustomerShell";
 
 export function CustomerDashboard() {
@@ -20,7 +21,7 @@ export function CustomerDashboard() {
   return (
     <CustomerShell title={t("dashTitle", { name: user.name })} subtitle={t("dashSub")}>
       {!ready ? (
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       ) : (
         <>
           <div className="mb-8 grid gap-3 sm:grid-cols-3">

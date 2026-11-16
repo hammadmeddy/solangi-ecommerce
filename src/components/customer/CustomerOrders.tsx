@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { CustomerShell } from "./CustomerShell";
 import type { PlacedOrder } from "@/lib/cart";
 import { apiGet } from "@/lib/api-client";
@@ -39,7 +40,7 @@ export function CustomerOrders() {
   return (
     <CustomerShell title={t("ordersTitle")} subtitle={t("ordersSub")}>
       {!ready ? (
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       ) : orders.length === 0 ? (
         <p className="rounded-xl border border-[var(--line)] bg-[var(--mist)]/40 px-4 py-8 text-[var(--muted)]">
           {t("ordersEmpty")}

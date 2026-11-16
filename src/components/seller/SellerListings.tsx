@@ -9,6 +9,7 @@ import { CATEGORIES } from "@/lib/categories";
 import type { SellerListing } from "@/lib/seller";
 import { AuthButton, AuthField } from "@/components/auth/AuthField";
 import { UiDropdown } from "@/components/ui/UiDropdown";
+import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { SellerShell } from "./SellerShell";
 
 const shopCategories = CATEGORIES.filter((c) => c.href !== "services-mode");
@@ -25,7 +26,7 @@ export function SellerListings() {
   if (!user || user.role !== "seller") {
     return (
       <SellerShell title={t("listingsTitle")} subtitle={t("listingsSub")}>
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       </SellerShell>
     );
   }
@@ -68,7 +69,7 @@ export function SellerListings() {
   return (
     <SellerShell title={t("listingsTitle")} subtitle={t("listingsSub")}>
       {!ready ? (
-        <p className="text-[var(--muted)]">{t("loading")}</p>
+        <PremiumLoader variant="panel" label={t("loading")} />
       ) : (
         <>
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
