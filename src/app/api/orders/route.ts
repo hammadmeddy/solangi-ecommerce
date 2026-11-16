@@ -10,6 +10,7 @@ const placeSchema = z.object({
   itemCount: z.number().int().positive(),
   customerName: z.string().optional(),
   phone: z.string().optional(),
+  payment: z.literal("COD").optional(),
   lines: z
     .array(
       z.object({
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
         totalPkr: parsed.data.totalPkr,
         itemCount: parsed.data.itemCount,
         summary: parsed.data.summary,
-        payment: "COD",
+        payment: parsed.data.payment || "COD",
         addressLabel: parsed.data.addressLabel,
         customerName: parsed.data.customerName || session?.name,
         phone: parsed.data.phone || session?.phone,

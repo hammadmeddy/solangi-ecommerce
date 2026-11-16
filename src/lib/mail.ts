@@ -8,7 +8,8 @@ function transporter() {
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
   const port = Number(process.env.SMTP_PORT || "587");
   const user = process.env.SMTP_USER?.trim();
-  const pass = process.env.SMTP_PASS?.trim().replace(/\s+/g, "");
+  const rawPass = process.env.SMTP_PASS?.trim() ?? "";
+  const pass = host.includes("gmail") ? rawPass.replace(/\s+/g, "") : rawPass;
   if (!user || !pass) {
     throw new Error("SMTP_USER and SMTP_PASS are required to send email OTP");
   }

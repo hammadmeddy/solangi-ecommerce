@@ -58,13 +58,11 @@ export async function POST(req: Request) {
     });
 
     let emailed = false;
-    let delivery: "email" | "demo" = "demo";
 
     if (smtpConfigured() && !forceDemo) {
       try {
         await sendOtpEmail(email, code);
         emailed = true;
-        delivery = "email";
       } catch (err) {
         console.error("OTP email failed", err);
         if (process.env.NODE_ENV === "production") {
@@ -80,7 +78,7 @@ export async function POST(req: Request) {
       ok: true,
       phone,
       emailMasked: mask,
-      delivery,
+      delivery: emailed ? "email" : "demo",
       demo: !emailed,
       hint: !emailed ? code : undefined,
     });

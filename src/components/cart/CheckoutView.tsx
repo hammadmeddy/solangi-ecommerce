@@ -9,14 +9,6 @@ import { useCustomer } from "@/components/providers/CustomerProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { AuthButton } from "@/components/auth/AuthField";
 
-const PAYMENTS = [
-  { id: "COD", live: true },
-  { id: "Card", live: false },
-  { id: "JazzCash", live: false },
-  { id: "EasyPaisa", live: false },
-  { id: "Bank", live: false },
-] as const;
-
 export function CheckoutView() {
   const t = useTranslations("Cart");
   const { user, ready: authReady } = useAuth();
@@ -25,7 +17,6 @@ export function CheckoutView() {
   const { format } = useCurrency();
   const router = useRouter();
   const [addressId, setAddressId] = useState("");
-  const [payment, setPayment] = useState<"COD">("COD");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -61,14 +52,11 @@ export function CheckoutView() {
       setError(t("needAddress"));
       return;
     }
-    if (payment !== "COD") {
-      setError(t("codOnly"));
-      return;
-    }
     const summary = lines.map((l) => `${l.name} × ${l.qty}`).join(" · ");
     const order = await placeOrder({
       addressLabel: `${selected.label} — ${selected.city}`,
       summary: summary.slice(0, 120),
+      payment: "COD",
     });
     router.push(`/checkout/success?order=${order.id}`);
   }
@@ -130,36 +118,9 @@ export function CheckoutView() {
           <fieldset className="rounded-2xl border border-[var(--line)] bg-white/80 p-5">
             <legend className="px-1 font-display text-xl font-semibold">{t("payment")}</legend>
             <p className="mt-2 text-sm text-[var(--muted)]">{t("paymentNote")}</p>
-            <div className="mt-3 grid gap-2">
-              {PAYMENTS.map((method) => (
-                <label
-                  key={method.id}
-                  className={`flex items-center justify-between rounded-xl border px-3 py-3 text-sm ${
-                    method.live
-                      ? payment === "COD"
-                        ? "border-[var(--ink)] bg-[var(--mist)]/50"
-                        : "border-[var(--line)]"
-                      : "border-[var(--line)] opacity-60"
-                  }`}
-                >
-                  <span className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="payment"
-                      disabled={!method.live}
-                      checked={method.live && payment === "COD"}
-                      onChange={() => {
-                        if (method.live) setPayment("COD");
-                      }}
-                    />
-                    <strong>{method.id}</strong>
-                  </span>
-                  <span className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                    {method.live ? t("available") : t("later")}
-                  </span>
-                </label>
-              ))}
-            </div>
+            <p className="mt-3 rounded-xl border border-[var(--ink)] bg-[var(--mist)]/50 px-3 py-3 text-sm font-semibold">
+              {t("codOnly")}
+            </p>
           </fieldset>
         </div>
 

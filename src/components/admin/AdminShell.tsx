@@ -10,7 +10,9 @@ const NAV = [
   { href: "/admin" as const, key: "navDashboard" as const },
   { href: "/admin/media" as const, key: "navMedia" as const },
   { href: "/admin/catalog" as const, key: "navCatalog" as const },
+  { href: "/admin/products" as const, key: "navProducts" as const },
   { href: "/admin/orders" as const, key: "navOrders" as const },
+  { href: "/admin/users" as const, key: "navUsers" as const },
   { href: "/admin/reviews" as const, key: "navReviews" as const },
   { href: "/admin/settings" as const, key: "navSettings" as const },
 ];

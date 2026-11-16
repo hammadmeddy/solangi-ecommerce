@@ -34,6 +34,7 @@ type CartContextValue = {
   placeOrder: (input: {
     addressLabel: string;
     summary: string;
+    payment?: string;
   }) => Promise<PlacedOrder>;
   refreshOrders: () => Promise<void>;
 };
@@ -218,7 +219,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [persistLocal, userId]);
 
   const placeOrder = useCallback(
-    async (input: { addressLabel: string; summary: string }) => {
+    async (input: { addressLabel: string; summary: string; payment?: string }) => {
       const snapshot = [...lines];
       const totalPkr = cartSubtotal(snapshot);
       const itemCount = cartCount(snapshot);
@@ -229,7 +230,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         totalPkr,
         itemCount,
         summary: input.summary,
-        payment: "COD",
+        payment: input.payment || "COD",
         addressLabel: input.addressLabel,
       };
 
@@ -237,6 +238,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const res = await apiPost<{ order: PlacedOrder }>("/api/orders", {
           addressLabel: input.addressLabel,
           summary: input.summary,
+          payment: input.payment || "COD",
           totalPkr,
           itemCount,
           lines: snapshot.map((l) => ({

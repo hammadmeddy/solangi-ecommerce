@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { SolangiLogo } from "@/components/brand/SolangiLogo";
 
-const PAYMENTS = ["Card", "JazzCash", "EasyPaisa", "Bank", "COD"] as const;
+const PAYMENTS = ["Cash on delivery"] as const;
 
 export async function Footer() {
   const t = await getTranslations("Footer");
