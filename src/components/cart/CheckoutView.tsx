@@ -21,6 +21,7 @@ export function CheckoutView() {
   const router = useRouter();
   const [addressId, setAddressId] = useState("");
   const [error, setError] = useState("");
+  const [placing, setPlacing] = useState(false);
 
   useEffect(() => {
     if (authReady && !user) router.replace("/auth/login");
@@ -55,13 +56,32 @@ export function CheckoutView() {
       toast.error(message);
       return;
     }
-    const summary = lines.map((l) => `${l.name} × ${l.qty}`).join(" · ");
-    const order = await placeOrder({
-      addressLabel: `${selected.label} — ${selected.city}`,
-      summary: summary.slice(0, 120),
-      payment: "COD",
-    });
-    router.push(`/checkout/success?order=${order.id}`);
+    const address = [
+      selected.fullName,
+      selected.line1,
+      selected.line2,
+      selected.city,
+      selected.province,
+    ]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(", ");
+    setPlacing(true);
+    setError("");
+    try {
+      const order = await placeOrder({
+        addressLabel: `${selected.label}: ${address}`.slice(0, 240),
+        customerName: selected.fullName,
+        phone: selected.phone,
+      });
+      router.push(`/checkout/success?order=${order.id}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t("orderFailed");
+      setError(message);
+      toast.error(message);
+    } finally {
+      setPlacing(false);
+    }
   }
 
   return (
@@ -145,7 +165,7 @@ export function CheckoutView() {
           </div>
           <p className="mb-5 text-xs text-[var(--muted)]">{t("codConfirm")}</p>
           {error ? <p className="mb-3 text-sm text-[var(--sale)]">{error}</p> : null}
-          <AuthButton type="submit">{t("placeOrder")}</AuthButton>
+          <AuthButton type="submit" disabled={placing}>{t("placeOrder")}</AuthButton>
           <Link
             href="/cart"
             className="mt-3 inline-flex w-full justify-center text-sm font-semibold text-[var(--teal)] hover:underline"

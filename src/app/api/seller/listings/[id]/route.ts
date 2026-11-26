@@ -1,17 +1,9 @@
-import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api-map";
-import { requireRoles } from "@/lib/api-auth";
-import { stockLabelFor, toSellerListing } from "@/lib/listing-map";
-
-const patchSchema = z.object({
-  name: z.string().min(1).max(120),
-  categoryId: z.string().min(1).max(40),
-  pricePkr: z.number().int().min(1).max(10_000_000),
-  stock: z.number().int().min(0).max(1_000_000),
-  status: z.enum(["active", "draft", "out"]),
-  description: z.string().max(2000).optional(),
-});
+import { requireApprovedSeller } from "@/lib/api-auth";
+import { nextListingStatus, stockLabelFor, toSellerListing } from "@/lib/listing-map";
+import { deleteManagedUpload, saveImageUpload } from "@/lib/uploads";
+import { listingSchema } from "@/lib/listing-schema";
 
 async function ownListing(sellerId: string, id: string) {
   const product = await prisma.product.findUnique({
@@ -22,47 +14,56 @@ async function ownListing(sellerId: string, id: string) {
   return product;
 }
 
-export async function PATCH(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
-  const gate = await requireRoles(["seller"]);
+type Ctx = { params: Promise<{ id: string }> };
+
+export async function PATCH(req: Request, ctx: Ctx) {
+  const gate = await requireApprovedSeller();
   if (gate.error) return gate.error;
   const { id } = await ctx.params;
 
   const existing = await ownListing(gate.session.sub, id);
   if (!existing) return jsonError("Listing not found", 404);
 
-  const parsed = patchSchema.safeParse(await req.json().catch(() => null));
+  const parsed = listingSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return jsonError("Check the listing fields", 400);
+  const input = parsed.data;
 
-  const category = await prisma.category.findUnique({ where: { id: parsed.data.categoryId } });
+  const category = await prisma.category.findUnique({ where: { id: input.categoryId } });
   if (!category) return jsonError("Choose a valid category", 400);
 
-  const store = await prisma.sellerStore.findUnique({ where: { userId: gate.session.sub } });
+  let imageUrl = existing.imageUrl;
+  if (input.imageDataUrl) {
+    try {
+      imageUrl = await saveImageUpload("product", id, input.imageDataUrl);
+    } catch (err) {
+      return jsonError(err instanceof Error ? err.message : "Image upload failed", 400);
+    }
+  }
+
+  const status = nextListingStatus(existing, { ...input, imageUrl });
   const product = await prisma.product.update({
     where: { id },
     data: {
-      name: parsed.data.name.trim(),
+      name: input.name.trim(),
       categoryId: category.id,
-      pricePkr: parsed.data.pricePkr,
-      stock: parsed.data.stock,
-      status: parsed.data.status,
-      description: parsed.data.description?.trim() || existing.description,
-      stockLabel: stockLabelFor(parsed.data.stock, parsed.data.status),
-      sellerName: store?.name || existing.sellerName,
+      pricePkr: input.pricePkr,
+      stock: input.stock,
+      status,
+      description: input.description?.trim() || existing.description,
+      stockLabel: stockLabelFor(input.stock, status),
+      imageUrl,
+      ...(status === "pending" ? { reviewNote: null } : {}),
     },
     include: { category: true },
   });
 
+  if (imageUrl !== existing.imageUrl) await deleteManagedUpload(existing.imageUrl);
+
   return jsonOk({ listing: toSellerListing(product) });
 }
 
-export async function DELETE(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> },
-) {
-  const gate = await requireRoles(["seller"]);
+export async function DELETE(_req: Request, ctx: Ctx) {
+  const gate = await requireApprovedSeller();
   if (gate.error) return gate.error;
   const { id } = await ctx.params;
 
@@ -71,9 +72,10 @@ export async function DELETE(
 
   const used = await prisma.orderItem.count({ where: { productId: id } });
   if (used > 0) {
-    return jsonError("This listing is on an order and cannot be removed", 409);
+    return jsonError("This listing is on an order. Save it as a draft to hide it instead.", 409);
   }
 
   await prisma.product.delete({ where: { id } });
+  await deleteManagedUpload(existing.imageUrl);
   return jsonOk({ ok: true });
 }

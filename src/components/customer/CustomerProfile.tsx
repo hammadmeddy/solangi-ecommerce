@@ -6,35 +6,43 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useCustomer } from "@/components/providers/CustomerProvider";
 import { AuthButton, AuthField } from "@/components/auth/AuthField";
 import { PremiumLoader } from "@/components/ui/PremiumLoader";
+import { useToast } from "@/components/ui/Toaster";
 import { CustomerShell } from "./CustomerShell";
 
 export function CustomerProfile() {
   const t = useTranslations("Customer");
-  const { user, updateUser } = useAuth();
-  const { email, city, saveProfileExtra, ready } = useCustomer();
+  const ta = useTranslations("Admin");
+  const { user } = useAuth();
+  const { email, city, saveProfile, ready } = useCustomer();
+  const toast = useToast();
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
   const [mail, setMail] = useState("");
   const [town, setTown] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     setName(user.name);
-    setPhone(user.phone);
     setMail(email);
     setTown(city);
   }, [user, email, city]);
 
   if (!user) return null;
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    updateUser({ name: name.trim(), phone: phone.trim(), email: mail.trim() || undefined });
-    saveProfileExtra({ email: mail.trim(), city: town.trim() });
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 2500);
+    setBusy(true);
+    try {
+      await saveProfile({ name: name.trim(), email: mail.trim(), city: town.trim() });
+      toast.success(t("saved"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("saveFailed"));
+    } finally {
+      setBusy(false);
+    }
   }
+
+  const roleKey = user.role === "seller" ? "roleSeller" : user.role === "admin" ? "roleAdmin" : "roleCustomer";
 
   return (
     <CustomerShell title={t("profileTitle")} subtitle={t("profileSub")}>
@@ -43,21 +51,30 @@ export function CustomerProfile() {
       ) : (
         <form className="grid max-w-xl gap-4" onSubmit={onSubmit}>
           <AuthField label={t("fullName")} name="name" value={name} onChange={(e) => setName(e.target.value)} required />
-          <AuthField label={t("phone")} name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+          <AuthField
+            label={t("phone")}
+            name="phone"
+            value={user.phone}
+            readOnly
+            disabled
+            hint={t("phoneLocked")}
+          />
           <AuthField
             label={t("email")}
             name="email"
             type="email"
             value={mail}
             onChange={(e) => setMail(e.target.value)}
+            hint={t("emailHint")}
           />
           <AuthField label={t("city")} name="city" value={town} onChange={(e) => setTown(e.target.value)} />
           <p className="text-xs text-[var(--muted)]">
-            {t("roleLabel")}: <strong>{user.role}</strong> · {t("profileNote")}
+            {t("roleLabel")}: <strong>{ta(roleKey)}</strong>
           </p>
-          {saved ? <p className="text-sm font-medium text-[var(--teal)]">{t("saved")}</p> : null}
           <div className="max-w-xs">
-            <AuthButton type="submit">{t("saveProfile")}</AuthButton>
+            <AuthButton type="submit" busy={busy}>
+              {t("saveProfile")}
+            </AuthButton>
           </div>
         </form>
       )}

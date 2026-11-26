@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api-map";
-import { requireRoles } from "@/lib/api-auth";
+import { requireApprovedSeller } from "@/lib/api-auth";
 import type { SellerStore } from "@/lib/seller";
 
 function toStore(row: {
@@ -11,6 +11,9 @@ function toStore(row: {
   phone: string;
   bio: string;
   verified: boolean;
+  status: string;
+  commissionPct: number | null;
+  rejectionReason: string | null;
 }): SellerStore {
   return {
     name: row.name,
@@ -19,27 +22,10 @@ function toStore(row: {
     phone: row.phone,
     bio: row.bio,
     verified: row.verified,
+    status: row.status as SellerStore["status"],
+    commissionPct: row.commissionPct,
+    rejectionReason: row.rejectionReason,
   };
-}
-
-async function ensureStore(userId: string, name: string, phone: string) {
-  const existing = await prisma.sellerStore.findUnique({ where: { userId } });
-  if (existing) return existing;
-  const slugBase = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 40);
-  return prisma.sellerStore.create({
-    data: {
-      userId,
-      name: `${name}'s Store`,
-      slug: `${slugBase || "store"}-${userId.slice(-4)}`,
-      city: "Pakistan",
-      phone,
-      bio: "",
-    },
-  });
 }
 
 const storeSchema = z.object({
@@ -55,27 +41,26 @@ const storeSchema = z.object({
 });
 
 export async function GET() {
-  const gate = await requireRoles(["seller"]);
+  const gate = await requireApprovedSeller();
   if (gate.error) return gate.error;
-  const store = await ensureStore(gate.session.sub, gate.session.name, gate.session.phone);
+  const store = await prisma.sellerStore.findUniqueOrThrow({ where: { id: gate.storeId } });
   return jsonOk({ store: toStore(store) });
 }
 
 export async function PUT(req: Request) {
-  const gate = await requireRoles(["seller"]);
+  const gate = await requireApprovedSeller();
   if (gate.error) return gate.error;
 
   const parsed = storeSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return jsonError("Check the store fields. Slug uses lowercase letters, numbers, and dashes.", 400);
 
-  const current = await ensureStore(gate.session.sub, gate.session.name, gate.session.phone);
   const slugTaken = await prisma.sellerStore.findFirst({
-    where: { slug: parsed.data.slug, NOT: { id: current.id } },
+    where: { slug: parsed.data.slug, NOT: { id: gate.storeId } },
   });
   if (slugTaken) return jsonError("That store URL is already taken", 409);
 
   const store = await prisma.sellerStore.update({
-    where: { id: current.id },
+    where: { id: gate.storeId },
     data: {
       name: parsed.data.name.trim(),
       slug: parsed.data.slug,

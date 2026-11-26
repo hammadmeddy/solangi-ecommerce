@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api-map";
 import type { AuthRole } from "@/lib/auth";
 import { sendOtpEmail, smtpConfigured } from "@/lib/mail";
+import { isAdminPhone } from "@/lib/api-auth";
 
 const bodySchema = z.object({
   phone: z.string().min(10).max(20),
@@ -20,10 +21,21 @@ export async function POST(req: Request) {
 
     const phone = parsed.data.phone.replace(/\s/g, "");
     const purpose = parsed.data.purpose ?? "login";
-    let role: AuthRole = parsed.data.role ?? "customer";
-    if (purpose === "admin") role = "admin";
-
     const existing = await prisma.user.findUnique({ where: { phone } });
+
+    // Roles are never taken from the request. Admin sign-in only works for a
+    // phone that is already an admin (or allow-listed); public sign-up always
+    // creates a customer. "seller" at register is only an intent to apply.
+    let role: AuthRole = "customer";
+    if (purpose === "admin") {
+      if (!isAdminPhone(phone, existing?.role)) {
+        return jsonError("This number is not registered as an admin", 403);
+      }
+      role = "admin";
+    }
+    if (existing && existing.status !== "active") {
+      return jsonError("This account is suspended. Contact Solangi support.", 403);
+    }
     const email =
       parsed.data.email?.trim().toLowerCase() ||
       existing?.email?.trim().toLowerCase() ||

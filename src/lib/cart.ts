@@ -20,6 +20,16 @@ export type PlacedOrder = {
   addressLabel: string;
   customerName?: string | null;
   phone?: string | null;
+  updatedAt?: string;
+  lines?: {
+    id?: string;
+    productId: string | null;
+    name: string;
+    qty: number;
+    pricePkr: number;
+    sellerId?: string | null;
+    itemStatus?: string;
+  }[];
 };
 
 export const CART_STORAGE_KEY = "solangi-cart";

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api-map";
-import { getSession } from "@/lib/session";
+import { getActiveSession as getSession } from "@/lib/api-auth";
 
 const createSchema = z.object({
   quote: z.string().min(8).max(500),

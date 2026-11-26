@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api-map";
-import { getSession } from "@/lib/session";
+import { getActiveSession as getSession } from "@/lib/api-auth";
 
 const lineSchema = z.object({
   productId: z.string().min(1),

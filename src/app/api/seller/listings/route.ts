@@ -1,21 +1,13 @@
-import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api-map";
-import { requireRoles } from "@/lib/api-auth";
-import { toSellerListing, stockLabelFor } from "@/lib/listing-map";
+import { requireApprovedSeller } from "@/lib/api-auth";
+import { nextListingStatus, stockLabelFor, toSellerListing } from "@/lib/listing-map";
+import { saveImageUpload } from "@/lib/uploads";
+import { listingSchema } from "@/lib/listing-schema";
 
-const listingSchema = z.object({
-  id: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/).optional(),
-  name: z.string().min(1).max(120),
-  categoryId: z.string().min(1).max(40),
-  pricePkr: z.number().int().min(1).max(10_000_000),
-  stock: z.number().int().min(0).max(1_000_000),
-  status: z.enum(["active", "draft", "out"]),
-  description: z.string().max(2000).optional(),
-});
 
 export async function GET() {
-  const gate = await requireRoles(["seller"]);
+  const gate = await requireApprovedSeller();
   if (gate.error) return gate.error;
 
   const products = await prisma.product.findMany({
@@ -28,7 +20,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const gate = await requireRoles(["seller"]);
+  const gate = await requireApprovedSeller();
   if (gate.error) return gate.error;
 
   const parsed = listingSchema.safeParse(await req.json().catch(() => null));
@@ -38,16 +30,18 @@ export async function POST(req: Request) {
   const category = await prisma.category.findUnique({ where: { id: input.categoryId } });
   if (!category) return jsonError("Choose a valid category", 400);
 
-  const id = input.id ?? `listing-${Date.now().toString(36)}`;
-  const existing = await prisma.product.findUnique({ where: { id } });
-  if (existing) {
-    if (existing.sellerId !== gate.session.sub) {
-      return jsonError("That listing id is already used", 409);
+  const id = `listing-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+  let imageUrl: string | null = null;
+  if (input.imageDataUrl) {
+    try {
+      imageUrl = await saveImageUpload("product", id, input.imageDataUrl);
+    } catch (err) {
+      return jsonError(err instanceof Error ? err.message : "Image upload failed", 400);
     }
-    return jsonError("Listing already exists", 409);
   }
 
   const store = await prisma.sellerStore.findUnique({ where: { userId: gate.session.sub } });
+  const status = nextListingStatus(null, { ...input, imageUrl });
   const product = await prisma.product.create({
     data: {
       id,
@@ -57,9 +51,10 @@ export async function POST(req: Request) {
       description: input.description?.trim() || `${input.name.trim()} from ${store?.name ?? "Solangi"}.`,
       sellerName: store?.name || gate.session.name,
       stock: input.stock,
-      stockLabel: stockLabelFor(input.stock, input.status),
-      status: input.status,
+      stockLabel: stockLabelFor(input.stock, status),
+      status,
       mode: "retail",
+      imageUrl,
       sellerId: gate.session.sub,
     },
     include: { category: true },

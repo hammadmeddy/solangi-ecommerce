@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useCustomer } from "@/components/providers/CustomerProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { useSeller } from "@/components/providers/SellerProvider";
 import { PremiumLoader } from "@/components/ui/PremiumLoader";
 import { CustomerShell } from "./CustomerShell";
 
@@ -13,6 +14,7 @@ export function CustomerDashboard() {
   const { user } = useAuth();
   const { orders, wishlist, addresses, ready } = useCustomer();
   const { format } = useCurrency();
+  const { application } = useSeller();
 
   if (!user) return null;
 
@@ -38,7 +40,10 @@ export function CustomerDashboard() {
               </Link>
             </div>
             <ul className="grid gap-2">
-              {orders.slice(0, 2).map((order) => (
+              {orders.length === 0 ? (
+                <li className="text-sm text-[var(--muted)]">{t("ordersEmpty")}</li>
+              ) : null}
+              {orders.slice(0, 3).map((order) => (
                 <li
                   key={order.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--line)] bg-[var(--cream)]/70 px-4 py-3"
@@ -57,6 +62,27 @@ export function CustomerDashboard() {
               ))}
             </ul>
           </div>
+
+          {user.role === "customer" ? (
+            <Link
+              href="/seller"
+              className="mb-6 block rounded-xl border border-[var(--gold)]/40 bg-[var(--cream)] px-4 py-4 transition hover:border-[var(--teal)]"
+            >
+              <p className="font-semibold text-[var(--ink)]">
+                {application ? t(`sellerApp_${application.status}`) : t("becomeSeller")}
+              </p>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                {application ? t("sellerAppBody") : t("becomeSellerBody")}
+              </p>
+            </Link>
+          ) : user.role === "seller" ? (
+            <Link
+              href="/seller"
+              className="mb-6 block rounded-xl border border-[var(--line)] bg-[var(--cream)] px-4 py-4 transition hover:border-[var(--teal)]"
+            >
+              <p className="font-semibold text-[var(--ink)]">{t("goSellerPanel")} →</p>
+            </Link>
+          ) : null}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <QuickLink href="/account/profile" title={t("navProfile")} body={t("quickProfile")} />

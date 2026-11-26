@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api-map";
 import { setSessionCookie, signSession } from "@/lib/session";
 import type { AuthRole } from "@/lib/auth";
+import { isAdminPhone } from "@/lib/api-auth";
 
 const bodySchema = z.object({
   phone: z.string().min(10).max(20),
@@ -46,51 +47,35 @@ export async function POST(req: Request) {
     });
 
     const existingUser = await prisma.user.findUnique({ where: { phone } });
-    const keepExisting = challenge.purpose === "login" && existingUser;
+    if (existingUser && existingUser.status !== "active") {
+      return jsonError("This account is suspended. Contact Solangi support.", 403);
+    }
     const email = challenge.email?.trim().toLowerCase() || undefined;
 
-    const user = await prisma.user.upsert({
-      where: { phone },
-      update: keepExisting
-        ? {
-            ...(email && !existingUser?.email ? { email } : {}),
-            ...(email && existingUser?.email !== email ? { email } : {}),
-          }
-        : {
-            name: challenge.name || undefined,
-            role: challenge.role,
-            ...(email ? { email } : {}),
-          },
-      create: {
-        phone,
-        name: challenge.name || "Solangi Member",
-        role: challenge.role,
-        email,
-      },
-    });
+    // Only an admin sign-in may grant "admin", and request-otp already checked
+    // the phone. Everything else keeps the stored role or starts as customer.
+    const grantAdmin =
+      challenge.purpose === "admin" && isAdminPhone(phone, existingUser?.role);
 
-    if (user.role === "seller") {
-      const existingStore = await prisma.sellerStore.findUnique({
-        where: { userId: user.id },
-      });
-      if (!existingStore) {
-        const slugBase = user.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "")
-          .slice(0, 40);
-        await prisma.sellerStore.create({
+    const user = existingUser
+      ? await prisma.user.update({
+          where: { id: existingUser.id },
           data: {
-            userId: user.id,
-            name: `${user.name}'s Store`,
-            slug: `${slugBase || "store"}-${user.id.slice(-4)}`,
-            city: "Pakistan",
-            phone: user.phone,
-            bio: "",
+            ...(email && existingUser.email !== email ? { email } : {}),
+            ...(grantAdmin && existingUser.role !== "admin" ? { role: "admin" } : {}),
+            ...(challenge.purpose === "register" && challenge.name
+              ? { name: challenge.name }
+              : {}),
+          },
+        })
+      : await prisma.user.create({
+          data: {
+            phone,
+            name: challenge.name || "Solangi Member",
+            role: grantAdmin ? "admin" : "customer",
+            email,
           },
         });
-      }
-    }
 
     const role = user.role as AuthRole;
     const token = await signSession({
