@@ -127,6 +127,8 @@ export function AdminProducts() {
               { value: "active", label: t("statusActive") },
               { value: "draft", label: t("statusDraft") },
               { value: "out", label: t("statusOut") },
+              { value: "pending", label: t("statusPending") },
+              { value: "rejected", label: t("statusRejected") },
             ]}
             onChange={(status) => setForm({ ...form, status })}
           />

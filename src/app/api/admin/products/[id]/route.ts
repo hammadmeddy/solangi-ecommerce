@@ -10,8 +10,10 @@ const patchSchema = z.object({
   stock: z.number().int().min(0).optional(),
   description: z.string().max(2000).optional(),
   mode: z.enum(["retail", "wholesale", "used", "services"]).optional(),
-  status: z.enum(["active", "draft", "out"]).optional(),
+  status: z.enum(["active", "draft", "out", "pending", "rejected"]).optional(),
   sellerName: z.string().max(80).optional(),
+  /** Shown to the seller, e.g. why a listing was rejected */
+  reviewNote: z.string().max(300).nullable().optional(),
 });
 
 type Params = { params: Promise<{ id: string }> };
@@ -28,18 +30,31 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!existing) return jsonError("Product not found", 404);
 
   const stock = parsed.data.stock ?? existing.stock;
+  let status = parsed.data.status ?? existing.status;
+  if (status === "active" && stock === 0) status = "out";
+  if (status === "out" && stock > 0 && parsed.data.status === undefined) status = "active";
+  if (parsed.data.status === "rejected" && !parsed.data.reviewNote) {
+    return jsonError("Give the seller a reason for rejecting", 400);
+  }
   const product = await prisma.product.update({
     where: { id },
     data: {
       ...parsed.data,
       stockLabel: stock > 0 ? "In stock" : "Out of stock",
-      status: parsed.data.status ?? (stock === 0 ? "out" : existing.status),
+      status,
+      ...(status === "active" && parsed.data.reviewNote === undefined ? { reviewNote: null } : {}),
     },
     include: { category: true },
   });
 
   return jsonOk({
-    product: { ...productToDemo(product), stock: product.stock, status: product.status },
+    product: {
+      ...productToDemo(product),
+      stock: product.stock,
+      status: product.status,
+      reviewNote: product.reviewNote,
+      sellerId: product.sellerId,
+    },
   });
 }
 

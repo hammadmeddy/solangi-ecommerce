@@ -103,6 +103,7 @@ async function main() {
       phone: seller.phone,
       bio: "Seed seller store for backend demos.",
       verified: true,
+      status: "approved",
     },
     create: {
       userId: seller.id,
@@ -112,8 +113,31 @@ async function main() {
       phone: seller.phone,
       bio: "Seed seller store for backend demos.",
       verified: true,
+      status: "approved",
+      reviewedAt: new Date(),
     },
   });
+
+  // Stores created before seller approval existed belong to users who are
+  // already sellers: approve them so their panel keeps working. Pending
+  // applicants are still customers, so they are not touched.
+  const legacy = await prisma.sellerStore.updateMany({
+    where: { status: "pending", user: { role: "seller" } },
+    data: { status: "approved", reviewedAt: new Date() },
+  });
+  if (legacy.count) console.log(`Approved ${legacy.count} existing seller store(s).`);
+
+  // Older order lines have no seller; fill it in from the product.
+  const unlinked = await prisma.orderItem.findMany({
+    where: { sellerId: null, productId: { not: null }, product: { sellerId: { not: null } } },
+    select: { id: true, product: { select: { sellerId: true } } },
+  });
+  for (const line of unlinked) {
+    await prisma.orderItem.update({
+      where: { id: line.id },
+      data: { sellerId: line.product?.sellerId ?? null },
+    });
+  }
 
   await prisma.siteSetting.upsert({
     where: { id: "solo" },

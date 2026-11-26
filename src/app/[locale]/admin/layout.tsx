@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
+import { getActiveSession as getSession } from "@/lib/api-auth";
 
 export default async function AdminLayout({
   children,

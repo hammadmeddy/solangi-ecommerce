@@ -7,6 +7,7 @@ import { useCustomer } from "@/components/providers/CustomerProvider";
 import type { CustomerAddress } from "@/lib/customer";
 import { AuthButton, AuthField } from "@/components/auth/AuthField";
 import { PremiumLoader } from "@/components/ui/PremiumLoader";
+import { useToast } from "@/components/ui/Toaster";
 import { CustomerShell } from "./CustomerShell";
 
 export function CustomerAddresses() {
@@ -14,6 +15,7 @@ export function CustomerAddresses() {
   const { user } = useAuth();
   const { addresses, saveAddress, removeAddress, ready } = useCustomer();
   const [editing, setEditing] = useState<CustomerAddress | null>(null);
+  const toast = useToast();
 
   if (!user) return null;
 
@@ -35,8 +37,9 @@ export function CustomerAddresses() {
     e.preventDefault();
     if (!editing) return;
     if (!editing.line1.trim() || !editing.city.trim()) return;
-    saveAddress(editing);
-    setEditing(null);
+    void saveAddress(editing)
+      .then(() => setEditing(null))
+      .catch((err) => toast.error(err instanceof Error ? err.message : t("saveFailed")));
   }
 
   return (
@@ -89,7 +92,11 @@ export function CustomerAddresses() {
                     <button
                       type="button"
                       className="text-sm font-semibold text-[var(--sale)]"
-                      onClick={() => removeAddress(addr.id)}
+                      onClick={() =>
+                        void removeAddress(addr.id).catch((err) =>
+                          toast.error(err instanceof Error ? err.message : t("saveFailed")),
+                        )
+                      }
                     >
                       {t("remove")}
                     </button>

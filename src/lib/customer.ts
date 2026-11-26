@@ -35,33 +35,6 @@ export const CUSTOMER_STORAGE = {
   wishlist: "solangi-customer-wishlist",
 } as const;
 
-export const DEMO_ORDERS: CustomerOrder[] = [
-  {
-    id: "SE-10024",
-    placedAt: "2026-11-08",
-    status: "shipped",
-    totalPkr: 9180,
-    itemCount: 2,
-    summary: "Linen kurta set · Ceramic dinner set",
-  },
-  {
-    id: "SE-10011",
-    placedAt: "2026-10-22",
-    status: "delivered",
-    totalPkr: 2850,
-    itemCount: 1,
-    summary: "Premium basmati · 5 kg",
-  },
-  {
-    id: "SE-09980",
-    placedAt: "2026-09-30",
-    status: "cancelled",
-    totalPkr: 1450,
-    itemCount: 1,
-    summary: "Car phone mount · magnetic",
-  },
-];
-
 export const DEFAULT_ADDRESSES: CustomerAddress[] = [
   {
     id: "addr-home",

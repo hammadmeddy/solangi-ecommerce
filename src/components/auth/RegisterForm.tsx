@@ -67,8 +67,10 @@ export function RegisterForm() {
       });
       toast.success(t("otpSent"), t("otpSentDetail"));
       router.push("/auth/verify");
-    } catch {
-      fail(t("errorOtpSend"));
+    } catch (err) {
+      // Show the server's reason (e.g. suspended, not an admin) when it sent one.
+      const message = err instanceof Error ? err.message : "";
+      fail(message && !message.includes(" failed (") ? message : t("errorOtpSend"));
     } finally {
       setBusy(false);
     }

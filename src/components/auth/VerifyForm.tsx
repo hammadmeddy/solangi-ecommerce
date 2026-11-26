@@ -38,7 +38,7 @@ export function VerifyForm() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!pending) return;
-    const role = pending.role;
+    const wantsSeller = pending.mode === "register" && pending.role === "seller";
     setBusy(true);
     const result = await completeVerify(otp);
     setBusy(false);
@@ -50,7 +50,8 @@ export function VerifyForm() {
     }
     setError("");
     toast.success(t("signedIn"));
-    router.push(homeForRole(role));
+    // A new "seller" registration lands on the seller application form.
+    router.push(wantsSeller ? "/seller" : homeForRole(result.role ?? "customer"));
   }
 
   const destination = pending.emailMasked || pending.email || pending.phone;

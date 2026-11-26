@@ -1,4 +1,4 @@
-// Solangi backend — SQLite for local; switch provider + DATABASE_URL for Hostinger MySQL/Postgres later.
+// Solangi backend — MySQL (Hostinger).
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,6 +15,9 @@ model User {
   email     String?
   /// customer | seller | admin
   role      String   @default("customer")
+  /// active | suspended
+  status    String   @default("active")
+  city      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -26,6 +29,8 @@ model User {
   reviews   Review[]
   addresses Address[]
   wishlist  WishlistItem[]
+  sales     OrderItem[]    @relation("SellerSales")
+  payouts   Payout[]
 }
 
 model OtpChallenge {
@@ -74,7 +79,9 @@ model Product {
   condition     String?
   serviceArea   String?
   imageUrl      String?
+  /// pending | active | rejected | draft | out
   status        String   @default("active")
+  reviewNote    String?
   sellerId      String?
   seller        User?    @relation("SellerProducts", fields: [sellerId], references: [id])
   createdAt     DateTime @default(now())
@@ -97,6 +104,16 @@ model SellerStore {
   phone    String
   bio      String  @default("")
   verified Boolean @default(false)
+  /// pending | approved | rejected | suspended
+  status          String    @default("pending")
+  cnic            String?
+  /// Overrides SiteSetting.defaultCommissionPct when set
+  commissionPct   Int?
+  rejectionReason String?
+  appliedAt       DateTime  @default(now())
+  reviewedAt      DateTime?
+
+  @@index([status])
 }
 
 model Order {
@@ -127,6 +144,28 @@ model OrderItem {
   name      String
   qty       Int
   pricePkr  Int
+  sellerId      String?
+  seller        User?    @relation("SellerSales", fields: [sellerId], references: [id])
+  commissionPkr Int      @default(0)
+  /// placed | packed | shipped | delivered | cancelled
+  itemStatus    String   @default("placed")
+
+  @@index([sellerId, itemStatus])
+}
+
+model Payout {
+  id          String    @id @default(cuid())
+  sellerId    String
+  seller      User      @relation(fields: [sellerId], references: [id])
+  amountPkr   Int
+  periodLabel String    @default("")
+  /// pending | paid
+  status      String    @default("pending")
+  note        String    @default("")
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([sellerId, status])
 }
 
 model SiteSetting {
@@ -135,6 +174,7 @@ model SiteSetting {
   heroRetail   String?
   heroFlash    String?
   heroModes    String?
+  defaultCommissionPct Int @default(10)
 }
 
 model Address {

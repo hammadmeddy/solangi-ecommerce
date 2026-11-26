@@ -39,7 +39,7 @@ type AuthContextValue = {
     phone: string;
     email: string;
   }) => Promise<void>;
-  completeVerify: (otp: string) => Promise<{ ok: boolean; error?: string }>;
+  completeVerify: (otp: string) => Promise<{ ok: boolean; error?: string; role?: AuthRole }>;
   updateUser: (patch: Partial<AuthUser>) => void;
   signOut: () => Promise<void>;
   clearPending: () => void;
@@ -143,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         phone: input.phone.trim(),
         email: input.email.trim().toLowerCase(),
         name: input.name.trim() || "Solangi Member",
+        // "seller" here only means "take me to the seller application".
         role: input.role === "admin" ? "customer" : input.role,
         mode: "register",
       });
@@ -177,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         persistLocal(res.user);
         setPending(null);
         setBackend(true);
-        return { ok: true };
+        return { ok: true, role: res.user.role };
       } catch {
         return { ok: false, error: "invalid" };
       }

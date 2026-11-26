@@ -14,12 +14,20 @@ const bodySchema = z.object({
   sellerName: z.string().max(80).optional(),
 });
 
-export async function GET() {
+export async function GET(req: Request) {
   const auth = await requireRoles(["admin"]);
   if (auth.error) return auth.error;
 
+  const url = new URL(req.url);
+  const status = url.searchParams.get("status") ?? "";
+  const q = url.searchParams.get("q")?.trim() ?? "";
+
   const products = await prisma.product.findMany({
-    include: { category: true },
+    where: {
+      ...(["active", "draft", "out", "pending", "rejected"].includes(status) ? { status } : {}),
+      ...(q ? { OR: [{ name: { contains: q } }, { sellerName: { contains: q } }] } : {}),
+    },
+    include: { category: true, seller: { select: { store: { select: { name: true, status: true } } } } },
     orderBy: { updatedAt: "desc" },
     take: 500,
   });
@@ -29,6 +37,10 @@ export async function GET() {
       ...productToDemo(product),
       stock: product.stock,
       status: product.status,
+      reviewNote: product.reviewNote,
+      sellerId: product.sellerId,
+      storeStatus: product.seller?.store?.status ?? null,
+      updatedAt: product.updatedAt.toISOString(),
     })),
   });
 }

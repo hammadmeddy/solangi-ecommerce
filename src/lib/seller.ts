@@ -1,3 +1,5 @@
+export type SellerStoreStatus = "pending" | "approved" | "rejected" | "suspended";
+
 export type SellerStore = {
   name: string;
   slug: string;
@@ -5,7 +7,25 @@ export type SellerStore = {
   bio: string;
   phone: string;
   verified: boolean;
+  status?: SellerStoreStatus;
+  /** null = the platform default applies */
+  commissionPct?: number | null;
+  rejectionReason?: string | null;
 };
+
+/** What a customer sees about their seller application. */
+export type SellerApplication = {
+  status: SellerStoreStatus;
+  name: string;
+  city: string;
+  phone: string;
+  cnic: string;
+  bio: string;
+  rejectionReason: string | null;
+  appliedAt: string;
+};
+
+export type SellerListingStatus = "active" | "draft" | "out" | "pending" | "rejected";
 
 export type SellerListing = {
   id: string;
@@ -14,50 +34,55 @@ export type SellerListing = {
   category: string;
   pricePkr: number;
   stock: number;
-  status: "active" | "draft" | "out";
+  status: SellerListingStatus;
   description: string;
+  imageUrl?: string | null;
+  reviewNote?: string | null;
 };
 
+/** One order as the seller sees it: only their own lines. */
 export type SellerOrder = {
   id: string;
   placedAt: string;
   buyer: string;
-  status: "new" | "accepted" | "shipped" | "completed" | "cancelled";
+  city: string;
+  /** Full address and phone appear once the seller has packed the order */
+  address: string | null;
+  phone: string | null;
+  /** The whole order's status (admin controls delivered/cancelled) */
+  orderStatus: string;
+  /** The seller's own progress on their lines */
+  status: string;
   totalPkr: number;
+  commissionPkr: number;
   summary: string;
+  lines: { id: string; name: string; qty: number; pricePkr: number; itemStatus: string }[];
+};
+
+export type SellerEarnings = {
+  grossPkr: number;
+  commissionPkr: number;
+  netPkr: number;
+  paidPkr: number;
+  pendingPayoutPkr: number;
+  availablePkr: number;
+  openPkr: number;
+  commissionPct: number;
+  payouts: {
+    id: string;
+    amountPkr: number;
+    periodLabel: string;
+    status: "pending" | "paid";
+    note: string;
+    paidAt: string | null;
+    createdAt: string;
+  }[];
 };
 
 export const SELLER_STORAGE = {
   store: "solangi-seller-store",
   listings: "solangi-seller-listings",
 } as const;
-
-export const DEMO_SELLER_ORDERS: SellerOrder[] = [
-  {
-    id: "SO-2201",
-    placedAt: "2026-11-09",
-    buyer: "Ayesha K.",
-    status: "new",
-    totalPkr: 4290,
-    summary: "Linen blend kurta set × 1",
-  },
-  {
-    id: "SO-2194",
-    placedAt: "2026-11-05",
-    buyer: "Usman R.",
-    status: "shipped",
-    totalPkr: 7890,
-    summary: "Ceramic dinner set · 16 pcs × 1",
-  },
-  {
-    id: "SO-2170",
-    placedAt: "2026-10-28",
-    buyer: "Sara M.",
-    status: "completed",
-    totalPkr: 2490,
-    summary: "Herbal skincare trio × 1",
-  },
-];
 
 export function defaultStore(phone: string, ownerName: string): SellerStore {
   return {
@@ -68,39 +93,4 @@ export function defaultStore(phone: string, ownerName: string): SellerStore {
     phone,
     verified: false,
   };
-}
-
-export function seedListings(): SellerListing[] {
-  return [
-    {
-      id: "listing-kurta",
-      name: "Linen blend kurta set",
-      categoryId: "fashion",
-      category: "Fashion & Clothing",
-      pricePkr: 4290,
-      stock: 18,
-      status: "active",
-      description: "Seller-managed retail listing (demo).",
-    },
-    {
-      id: "listing-dinner",
-      name: "Ceramic dinner set · 16 pcs",
-      categoryId: "home",
-      category: "Home & Kitchen",
-      pricePkr: 7890,
-      stock: 6,
-      status: "active",
-      description: "Seller-managed retail listing (demo).",
-    },
-    {
-      id: "listing-draft",
-      name: "New seasonal scarf (draft)",
-      categoryId: "fashion",
-      category: "Fashion & Clothing",
-      pricePkr: 1290,
-      stock: 0,
-      status: "draft",
-      description: "Draft listing — not visible in shop yet.",
-    },
-  ];
 }

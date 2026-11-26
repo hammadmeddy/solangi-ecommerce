@@ -31,10 +31,11 @@ type CartContextValue = {
   removeLine: (productId: string) => void;
   clearCart: () => void;
   placedOrders: PlacedOrder[];
+  /** Throws with the server's message (e.g. out of stock) if the order fails. */
   placeOrder: (input: {
     addressLabel: string;
-    summary: string;
-    payment?: string;
+    customerName?: string;
+    phone?: string;
   }) => Promise<PlacedOrder>;
   refreshOrders: () => Promise<void>;
 };
@@ -219,39 +220,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [persistLocal, userId]);
 
   const placeOrder = useCallback(
-    async (input: { addressLabel: string; summary: string; payment?: string }) => {
-      const snapshot = [...lines];
-      const totalPkr = cartSubtotal(snapshot);
-      const itemCount = cartCount(snapshot);
-      let order: PlacedOrder = {
-        id: `SE-${10000 + Math.floor(Math.random() * 8000)}`,
-        placedAt: new Date().toISOString().slice(0, 10),
-        status: "placed",
-        totalPkr,
-        itemCount,
-        summary: input.summary,
-        payment: input.payment || "COD",
+    async (input: { addressLabel: string; customerName?: string; phone?: string }) => {
+      const res = await apiPost<{ order: PlacedOrder }>("/api/orders", {
         addressLabel: input.addressLabel,
-      };
-
-      try {
-        const res = await apiPost<{ order: PlacedOrder }>("/api/orders", {
-          addressLabel: input.addressLabel,
-          summary: input.summary,
-          payment: input.payment || "COD",
-          totalPkr,
-          itemCount,
-          lines: snapshot.map((l) => ({
-            productId: l.productId,
-            name: l.name,
-            qty: l.qty,
-            pricePkr: l.pricePkr,
-          })),
-        });
-        order = res.order;
-      } catch {
-        /* keep local order if API unavailable */
-      }
+        customerName: input.customerName,
+        phone: input.phone,
+        payment: "COD",
+        lines: lines.map((l) => ({ productId: l.productId, qty: l.qty })),
+      });
+      const order = res.order;
 
       setPlacedOrders((prev) => {
         const next = [order, ...prev.filter((o) => o.id !== order.id)];

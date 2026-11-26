@@ -50,8 +50,10 @@ export function AdminLoginForm() {
       });
       toast.success(ta("otpSent"), ta("otpSentDetail"));
       router.push("/auth/verify");
-    } catch {
-      fail(ta("errorOtpSend"));
+    } catch (err) {
+      // Show the server's reason (e.g. suspended, not an admin) when it sent one.
+      const message = err instanceof Error ? err.message : "";
+      fail(message && !message.includes(" failed (") ? message : ta("errorOtpSend"));
     } finally {
       setBusy(false);
     }

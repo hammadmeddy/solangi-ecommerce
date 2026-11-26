@@ -10,8 +10,9 @@ import { SellerShell } from "./SellerShell";
 
 export function SellerDashboard() {
   const t = useTranslations("Seller");
+  const tc = useTranslations("Customer");
   const { user } = useAuth();
-  const { store, listings, orders, ready } = useSeller();
+  const { store, listings, orders, earnings, ready } = useSeller();
   const { format } = useCurrency();
 
   if (!user || user.role !== "seller") {
@@ -23,7 +24,13 @@ export function SellerDashboard() {
   }
 
   const active = listings.filter((l) => l.status === "active").length;
-  const openOrders = orders.filter((o) => o.status === "new" || o.status === "accepted" || o.status === "shipped");
+  const pending = listings.filter((l) => l.status === "pending").length;
+  const rejected = listings.filter((l) => l.status === "rejected").length;
+  const lowStock = listings.filter((l) => l.status === "active" && l.stock > 0 && l.stock < 5).length;
+  const toPack = orders.filter((o) => o.status === "placed").length;
+  const openOrders = orders.filter(
+    (o) => o.orderStatus === "placed" || o.orderStatus === "packed" || o.orderStatus === "shipped",
+  );
 
   return (
     <SellerShell title={t("dashTitle")} subtitle={t("dashSub", { store: store.name })}>
@@ -31,11 +38,40 @@ export function SellerDashboard() {
         <PremiumLoader variant="panel" label={t("loading")} />
       ) : (
         <>
-          <div className="mb-8 grid gap-3 sm:grid-cols-3">
-            <Stat label={t("statListings")} value={String(listings.length)} />
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label={t("statActive")} value={String(active)} />
+            <Stat label={t("statPending")} value={String(pending)} />
             <Stat label={t("statOpenOrders")} value={String(openOrders.length)} />
+            <Stat label={t("statBalance")} value={format(earnings?.availablePkr ?? 0)} />
           </div>
+
+          {toPack || rejected || lowStock ? (
+            <ul className="mb-8 grid gap-2 text-sm">
+              {toPack ? (
+                <li className="rounded-xl bg-amber-50 px-4 py-2.5">
+                  <Link href="/seller/orders" className="font-semibold text-amber-900 hover:underline">
+                    {t("alertToPack", { n: toPack })} →
+                  </Link>
+                </li>
+              ) : null}
+              {rejected ? (
+                <li className="rounded-xl bg-red-50 px-4 py-2.5">
+                  <Link href="/seller/listings" className="font-semibold text-[var(--sale)] hover:underline">
+                    {t("alertRejected", { n: rejected })} →
+                  </Link>
+                </li>
+              ) : null}
+              {lowStock ? (
+                <li className="rounded-xl bg-[var(--mist)] px-4 py-2.5">
+                  <Link href="/seller/listings" className="font-semibold hover:underline">
+                    {t("alertLowStock", { n: lowStock })} →
+                  </Link>
+                </li>
+              ) : null}
+            </ul>
+          ) : (
+            <div className="mb-8" />
+          )}
 
           <div className="mb-8 rounded-xl border border-[var(--line)] bg-[var(--mist)]/40 px-4 py-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
@@ -58,7 +94,10 @@ export function SellerDashboard() {
               </Link>
             </div>
             <ul className="grid gap-2">
-              {orders.slice(0, 2).map((order) => (
+              {orders.length === 0 ? (
+                <li className="text-sm text-[var(--muted)]">{t("ordersEmpty")}</li>
+              ) : null}
+              {orders.slice(0, 3).map((order) => (
                 <li
                   key={order.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--line)] bg-[var(--cream)]/70 px-4 py-3"
@@ -72,7 +111,7 @@ export function SellerDashboard() {
                   <div className="text-right">
                     <p className="font-semibold">{format(order.totalPkr)}</p>
                     <p className="text-xs uppercase tracking-wide text-[var(--teal)]">
-                      {t(`orderStatus.${order.status}`)}
+                      {tc(`status.${order.status}`)}
                     </p>
                   </div>
                 </li>

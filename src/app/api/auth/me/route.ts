@@ -7,9 +7,9 @@ export async function GET() {
   if (!session) return jsonOk({ user: null });
 
   const user = await prisma.user.findUnique({ where: { id: session.sub } });
-  if (!user) {
+  if (!user || user.status !== "active") {
     await clearSessionCookie();
-    return jsonOk({ user: null });
+    return jsonOk({ user: null, suspended: Boolean(user) });
   }
 
   return jsonOk({
@@ -17,7 +17,8 @@ export async function GET() {
       id: user.id,
       name: user.name,
       phone: user.phone,
-      email: user.email,
+      email: user.email ?? undefined,
+      city: user.city ?? undefined,
       role: user.role,
     },
   });
