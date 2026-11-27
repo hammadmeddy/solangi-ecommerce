@@ -1,6 +1,26 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { useToast } from "@/components/ui/Toaster";
+
+/** What the server says about the notification email for an admin decision. */
+export type EmailOutcome = { emailed: boolean; reason?: "no-email" | "smtp-off" | "failed" } | null | undefined;
+
+/**
+ * Shows the admin's success message plus whether the seller was emailed.
+ * A missing or failed email becomes a warning so the admin can tell them another way.
+ */
+export function toastDecision(
+  toast: ReturnType<typeof useToast>,
+  t: (key: string) => string,
+  title: string,
+  email: EmailOutcome,
+) {
+  if (!email) return toast.success(title);
+  if (email.emailed) return toast.success(title, t("emailSent"));
+  const key = email.reason === "no-email" ? "emailNoAddress" : email.reason === "smtp-off" ? "emailSmtpOff" : "emailFailed";
+  return toast.warning(title, t(key));
+}
 
 /** Small shared pieces for the admin and seller panels. */
 

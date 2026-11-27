@@ -3,7 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { AdminShell } from "./AdminShell";
-import { EmptyState, FilterTabs, StatusPill, dangerBtn, ghostBtn, inputClass } from "./AdminBits";
+import {
+  EmptyState,
+  FilterTabs,
+  StatusPill,
+  dangerBtn,
+  ghostBtn,
+  inputClass,
+  toastDecision,
+  type EmailOutcome,
+} from "./AdminBits";
 import { UiDropdown } from "@/components/ui/UiDropdown";
 import { apiGet, apiSend } from "@/lib/api-client";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -82,9 +91,9 @@ export function AdminUsers() {
   async function patch(user: AdminUser, body: { role?: string; status?: string }) {
     setBusyId(user.id);
     try {
-      const res = await apiSend<{ user: AdminUser }>("PATCH", `/api/admin/users/${user.id}`, body);
+      const res = await apiSend<{ user: AdminUser; email?: EmailOutcome }>("PATCH", `/api/admin/users/${user.id}`, body);
       setUsers((prev) => prev.map((row) => (row.id === user.id ? { ...row, ...res.user } : row)));
-      toast.success(t("userSaved"));
+      toastDecision(toast, t, t("userSaved"), res.email);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("usersSaveFailed"));
     } finally {

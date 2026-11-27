@@ -699,7 +699,11 @@
     "userOrders": "{n, plural, =0 {no orders} one {# order} other {# orders}}",
     "userSaved": "User updated",
     "usersEmpty": "No users match.",
-    "usersSearch": "Search by name, phone or email"
+    "usersSearch": "Search by name, phone or email",
+    "emailSent": "The seller was emailed.",
+    "emailNoAddress": "This seller has no email address. Tell them another way.",
+    "emailSmtpOff": "Email is not set up on the server, so no email was sent.",
+    "emailFailed": "The email could not be sent. Tell the seller another way."
   },
   "ModeShop": {
     "home": "Home",

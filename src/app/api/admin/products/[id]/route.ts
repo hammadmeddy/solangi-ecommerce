@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { jsonError, jsonOk, productToDemo } from "@/lib/api-map";
 import { requireRoles } from "@/lib/api-auth";
+import { notifyListingDecision, type EmailResult } from "@/lib/decision-mail";
 
 const patchSchema = z.object({
   name: z.string().min(2).max(160).optional(),
@@ -26,7 +27,10 @@ export async function PATCH(req: Request, { params }: Params) {
   const parsed = patchSchema.safeParse(await req.json());
   if (!parsed.success) return jsonError("Invalid product", 400);
 
-  const existing = await prisma.product.findUnique({ where: { id } });
+  const existing = await prisma.product.findUnique({
+    where: { id },
+    include: { seller: { select: { name: true, email: true } } },
+  });
   if (!existing) return jsonError("Product not found", 404);
 
   const stock = parsed.data.stock ?? existing.stock;
@@ -36,6 +40,18 @@ export async function PATCH(req: Request, { params }: Params) {
   if (parsed.data.status === "rejected" && !parsed.data.reviewNote) {
     return jsonError("Give the seller a reason for rejecting", 400);
   }
+  // Only seller listings coming out of review get an email.
+  let decision: "approved" | "rejected" | null = null;
+  if (existing.seller) {
+    if (parsed.data.status === "rejected" && existing.status !== "rejected") decision = "rejected";
+    else if (
+      (parsed.data.status === "active" || parsed.data.status === "out") &&
+      (existing.status === "pending" || existing.status === "rejected")
+    ) {
+      decision = "approved";
+    }
+  }
+
   const product = await prisma.product.update({
     where: { id },
     data: {
@@ -47,6 +63,11 @@ export async function PATCH(req: Request, { params }: Params) {
     include: { category: true },
   });
 
+  const email: EmailResult | null =
+    decision && existing.seller
+      ? await notifyListingDecision(existing.seller, product.name, decision, parsed.data.reviewNote)
+      : null;
+
   return jsonOk({
     product: {
       ...productToDemo(product),
@@ -55,6 +76,7 @@ export async function PATCH(req: Request, { params }: Params) {
       reviewNote: product.reviewNote,
       sellerId: product.sellerId,
     },
+    email,
   });
 }
 

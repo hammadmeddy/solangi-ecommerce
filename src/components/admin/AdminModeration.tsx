@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { AdminShell } from "./AdminShell";
-import { EmptyState, FilterTabs, StatusPill, dangerBtn, primaryBtn } from "./AdminBits";
+import {
+  EmptyState,
+  FilterTabs,
+  StatusPill,
+  dangerBtn,
+  primaryBtn,
+  toastDecision,
+  type EmailOutcome,
+} from "./AdminBits";
 import { apiGet, apiSend } from "@/lib/api-client";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { useToast } from "@/components/ui/Toaster";
@@ -52,9 +60,12 @@ export function AdminModeration() {
   async function decide(item: Listing, status: "active" | "rejected", reviewNote?: string) {
     setBusyId(item.id);
     try {
-      await apiSend("PATCH", `/api/admin/products/${item.id}`, { status, reviewNote: reviewNote ?? null });
+      const res = await apiSend<{ email?: EmailOutcome }>("PATCH", `/api/admin/products/${item.id}`, {
+        status,
+        reviewNote: reviewNote ?? null,
+      });
       setItems((prev) => prev.filter((p) => p.id !== item.id));
-      toast.success(status === "active" ? t("listingApproved") : t("listingRejected"));
+      toastDecision(toast, t, status === "active" ? t("listingApproved") : t("listingRejected"), res.email);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("productsSaveFailed"));
     } finally {

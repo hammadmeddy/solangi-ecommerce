@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { jsonError, jsonOk } from "@/lib/api-map";
 import { requireRoles } from "@/lib/api-auth";
 import { slugify } from "@/lib/seller-store";
+import { notifyStoreDecision, type EmailResult, type StoreDecision } from "@/lib/decision-mail";
 
 // One endpoint for every admin action on a seller store. `id` is the store id.
 const bodySchema = z.discriminatedUnion("action", [
@@ -42,6 +43,8 @@ export async function PATCH(req: Request, { params }: Params) {
   if (store.user.role === "admin") return jsonError("Admin accounts cannot be sellers", 400);
 
   const now = new Date();
+  let decision: StoreDecision | null = null;
+  let reason: string | null = null;
 
   switch (body.action) {
     case "approve":
@@ -53,6 +56,9 @@ export async function PATCH(req: Request, { params }: Params) {
         }),
         prisma.user.update({ where: { id: store.userId }, data: { role: "seller" } }),
       ]);
+      if (store.status !== "approved") {
+        decision = body.action === "reinstate" || store.status === "suspended" ? "reinstated" : "approved";
+      }
       break;
     }
     case "reject":
@@ -70,6 +76,10 @@ export async function PATCH(req: Request, { params }: Params) {
           data: { status: "draft", reviewNote: `Store ${status} by admin` },
         }),
       ]);
+      if (store.status !== status) {
+        decision = status;
+        reason = body.reason ?? null;
+      }
       break;
     }
     case "verify":
@@ -99,5 +109,13 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const updated = await prisma.sellerStore.findUniqueOrThrow({ where: { id } });
-  return jsonOk({ store: updated });
+  const email: EmailResult | null = decision
+    ? await notifyStoreDecision(
+        { name: store.user.name, email: store.user.email },
+        updated.name,
+        decision,
+        reason,
+      )
+    : null;
+  return jsonOk({ store: updated, email });
 }
