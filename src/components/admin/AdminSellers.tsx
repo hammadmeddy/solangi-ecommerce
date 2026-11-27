@@ -6,6 +6,8 @@ import { AdminShell } from "./AdminShell";
 import {
   EmptyState,
   FilterTabs,
+  toastDecision,
+  type EmailOutcome,
   StatusPill,
   dangerBtn,
   ghostBtn,
@@ -86,8 +88,8 @@ export function AdminSellers() {
   async function act(seller: AdminSeller, body: Action) {
     setBusyId(seller.id);
     try {
-      await apiSend("PATCH", `/api/admin/sellers/${seller.id}`, body);
-      toast.success(t("sellerSaved"));
+      const res = await apiSend<{ email?: EmailOutcome }>("PATCH", `/api/admin/sellers/${seller.id}`, body);
+      toastDecision(toast, t, t("sellerSaved"), res.email);
       setEditingId(null);
       await load();
     } catch (err) {

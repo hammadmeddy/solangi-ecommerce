@@ -4,6 +4,7 @@ import { jsonError, jsonOk } from "@/lib/api-map";
 import { requireRoles } from "@/lib/api-auth";
 import { toClientOrder } from "@/lib/order-map";
 import { ensureStoreFor } from "@/lib/seller-store";
+import { notifyStoreDecision, type EmailResult } from "@/lib/decision-mail";
 
 const bodySchema = z
   .object({
@@ -74,8 +75,13 @@ export async function PATCH(req: Request, { params }: Params) {
   });
 
   // Making someone a seller here counts as approving their store.
-  if (role === "seller") {
-    await ensureStoreFor(user, "approved");
+  let email: EmailResult | null = null;
+  if (role === "seller" && target.role !== "seller") {
+    const before = await prisma.sellerStore.findUnique({ where: { userId: id }, select: { status: true } });
+    const store = await ensureStoreFor(user, "approved");
+    if (before?.status !== "approved") {
+      email = await notifyStoreDecision(user, store.name, before?.status === "suspended" ? "reinstated" : "approved");
+    }
   }
   // A seller taken off the seller role, or suspended, should not stay live.
   if ((role && role !== "seller" && target.role === "seller") || status === "suspended") {
@@ -85,5 +91,5 @@ export async function PATCH(req: Request, { params }: Params) {
     });
   }
 
-  return jsonOk({ user });
+  return jsonOk({ user, email });
 }

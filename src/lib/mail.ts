@@ -18,13 +18,27 @@ function transporter() {
     port,
     secure: port === 465,
     auth: { user, pass },
+    // Fail fast so an admin action never hangs on a slow mail server.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   });
 }
 
-export async function sendOtpEmail(to: string, code: string): Promise<void> {
-  const from =
+function fromAddress() {
+  return (
     process.env.SMTP_FROM?.trim() ||
-    `Solangi Ecommerce <${process.env.SMTP_USER!.trim()}>`;
+    `Solangi Ecommerce <${process.env.SMTP_USER!.trim()}>`
+  );
+}
+
+/** Sends a plain notification email. Throws if SMTP is not configured or sending fails. */
+export async function sendMail(input: { to: string; subject: string; text: string; html: string }) {
+  await transporter().sendMail({ from: fromAddress(), ...input });
+}
+
+export async function sendOtpEmail(to: string, code: string): Promise<void> {
+  const from = fromAddress();
 
   const transport = transporter();
   await transport.sendMail({
